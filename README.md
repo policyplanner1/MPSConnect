@@ -1,97 +1,220 @@
-This is a new [**React Native**](https://reactnative.dev) project, bootstrapped using [`@react-native-community/cli`](https://github.com/react-native-community/cli).
+# MPS Connect
 
-# Getting Started
+Super App for Government Services and Business Management built using React Native.
 
-> **Note**: Make sure you have completed the [Set Up Your Environment](https://reactnative.dev/docs/set-up-your-environment) guide before proceeding.
+---
 
-## Step 1: Start Metro
+## 📱 Overview
 
-First, you will need to run **Metro**, the JavaScript build tool for React Native.
+MPS Connect is a modular super app that provides:
 
-To start the Metro dev server, run the following command from the root of your React Native project:
+* Government Services (Passport, Certificates, etc.)
+* Service Bundles (Grouped services)
+* BizzPlanner (Business management tools)
 
-```sh
-# Using npm
-npm start
+The project follows a **modular architecture** where each feature is built as an independent module.
 
-# OR using Yarn
-yarn start
+---
+
+## 🏗 Project Structure
+
+```bash
+src/
+ ├── app/                # App entry & global providers
+ ├── core/               # Shared reusable logic
+ ├── modules/            # Feature-based modules
+ ├── navigation/         # Navigation setup
+ ├── store/              # Global state
+ ├── config/             # Environment configs
+ └── assets/             # Images, fonts, icons
 ```
 
-## Step 2: Build and run your app
+---
 
-With Metro running, open a new terminal window/pane from the root of your React Native project, and use one of the following commands to build and run your Android or iOS app:
+## 🧠 Folder Details
 
-### Android
+### 🔹 app/
 
-```sh
-# Using npm
-npm run android
+Handles app initialization and global providers.
 
-# OR using Yarn
-yarn android
+* `App.tsx` → Entry point
+* `providers/` → Navigation, Theme, Store setup
+
+---
+
+### 🔹 core/
+
+Reusable code shared across all modules.
+
+* `api/` → Axios setup, API configs
+* `ui/` → Common components (Button, Input)
+* `theme/` → Colors, typography
+* `hooks/` → Custom reusable hooks
+* `utils/` → Helper functions
+* `storage/` → Local & secure storage
+* `constants/` → Static values
+
+---
+
+### 🔹 modules/
+
+Each folder represents an independent feature (mini app).
+
+#### services/
+
+Government services module
+
+* `screens/` → UI screens
+* `components/` → UI elements
+* `api/` → API calls
+* `store/` → Local state
+* `hooks/` → Business logic
+* `types/` → Type definitions
+* `navigation/` → Module routing
+
+> Includes DynamicForm for scalable service forms
+
+---
+
+#### bundles/
+
+Handles grouped services (e.g., marriage bundle)
+
+---
+
+#### bizzplanner/
+
+Business management module
+
+* Dashboard
+* Tasks
+* Finance
+* Reports
+
+---
+
+#### auth/
+
+Authentication (login/signup)
+
+---
+
+#### profile/
+
+User profile & settings
+
+---
+
+#### documents/
+
+Document upload, preview, verification
+
+---
+
+#### payments/ *(future)*
+
+Payment integrations
+
+---
+
+#### notifications/ *(future)*
+
+Push notifications
+
+---
+
+### 🔹 navigation/
+
+Central navigation system
+
+* `RootNavigator.tsx` → Main entry navigation
+* `TabNavigator.tsx` → Bottom tabs
+* `linking.ts` → Deep linking
+
+---
+
+### 🔹 store/
+
+Global state management
+
+* `authStore.ts` → User & token
+* `appStore.ts` → App-level settings
+
+---
+
+### 🔹 config/
+
+Environment configurations
+
+* `env.ts` → API URLs, keys
+
+---
+
+### 🔹 assets/
+
+Static resources
+
+* images
+* icons
+* fonts
+
+---
+
+## 🧭 Navigation Flow
+
+```text
+App
+ └── RootNavigator
+      └── TabNavigator
+           ├── Services
+           ├── Bundles
+           ├── BizzPlanner
+           └── Profile
 ```
 
-### iOS
+---
 
-For iOS, remember to install CocoaPods dependencies (this only needs to be run on first clone or after updating native deps).
+## 🧠 Architecture Principles
 
-The first time you create a new project, run the Ruby bundler to install CocoaPods itself:
+* Modular feature-based structure
+* Each module is independent
+* Shared logic inside `core/`
+* Minimal global state
+* Scalable and maintainable design
 
-```sh
-bundle install
+---
+
+## ⚠️ Rules for Development
+
+### ✅ Do
+
+* Keep modules independent
+* Use reusable components from `core/`
+* Follow consistent folder structure
+
+### ❌ Don’t
+
+* Don’t mix module logic
+* Don’t put business logic in `core/`
+* Don’t use global state unnecessarily
+
+---
+
+## 🚀 Getting Started
+
+```bash
+npm install
+npx react-native run-android
 ```
 
-Then, and every time you update your native dependencies, run:
+---
 
-```sh
-bundle exec pod install
-```
+## 📌 Tech Stack
 
-For more information, please visit [CocoaPods Getting Started guide](https://guides.cocoapods.org/using/getting-started.html).
+* React Native
+* TypeScript
+* Zustand (State Management)
+* Axios (API calls)
 
-```sh
-# Using npm
-npm run ios
-
-# OR using Yarn
-yarn ios
-```
-
-If everything is set up correctly, you should see your new app running in the Android Emulator, iOS Simulator, or your connected device.
-
-This is one way to run your app — you can also build it directly from Android Studio or Xcode.
-
-## Step 3: Modify your app
-
-Now that you have successfully run the app, let's make changes!
-
-Open `App.tsx` in your text editor of choice and make some changes. When you save, your app will automatically update and reflect these changes — this is powered by [Fast Refresh](https://reactnative.dev/docs/fast-refresh).
-
-When you want to forcefully reload, for example to reset the state of your app, you can perform a full reload:
-
-- **Android**: Press the <kbd>R</kbd> key twice or select **"Reload"** from the **Dev Menu**, accessed via <kbd>Ctrl</kbd> + <kbd>M</kbd> (Windows/Linux) or <kbd>Cmd ⌘</kbd> + <kbd>M</kbd> (macOS).
-- **iOS**: Press <kbd>R</kbd> in iOS Simulator.
-
-## Congratulations! :tada:
-
-You've successfully run and modified your React Native App. :partying_face:
-
-### Now what?
-
-- If you want to add this new React Native code to an existing application, check out the [Integration guide](https://reactnative.dev/docs/integration-with-existing-apps).
-- If you're curious to learn more about React Native, check out the [docs](https://reactnative.dev/docs/getting-started).
-
-# Troubleshooting
-
-If you're having issues getting the above steps to work, see the [Troubleshooting](https://reactnative.dev/docs/troubleshooting) page.
-
-# Learn More
-
-To learn more about React Native, take a look at the following resources:
-
-- [React Native Website](https://reactnative.dev) - learn more about React Native.
-- [Getting Started](https://reactnative.dev/docs/environment-setup) - an **overview** of React Native and how setup your environment.
-- [Learn the Basics](https://reactnative.dev/docs/getting-started) - a **guided tour** of the React Native **basics**.
-- [Blog](https://reactnative.dev/blog) - read the latest official React Native **Blog** posts.
-- [`@facebook/react-native`](https://github.com/facebook/react-native) - the Open Source; GitHub **repository** for React Native.
+---
+ 
