@@ -73,3 +73,13 @@ yarn-error.log
 !.yarn/releases
 !.yarn/sdks
 !.yarn/versions
+
+node_modules/
+android/build/
+android/app/build/
+ios/build/
+ios/Pods/
+*.log
+*.lock
+.env
+.DS_Store
