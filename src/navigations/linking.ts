@@ -1,1 +1,3 @@
-//deep linking config
+const linking = {};
+
+export default linking;
