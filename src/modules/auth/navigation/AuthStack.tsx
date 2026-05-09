@@ -6,7 +6,7 @@ import RegisterScreen from '../screens/RegisterScreen';
 import ResetPasswordScreen from '../screens/ResetPasswordScreen';
 import SplashScreen from '../screens/SplashScreen';
 import VerificationCodeScreen from '../screens/VerificationCodeScreen';
-import HomeScreen from '../../services/screens/HomeScreen';
+import ServicesStack from '../../services/navigation/ServicesStack';
 
 export type AuthScreenName =
   | 'Splash'
@@ -82,7 +82,7 @@ function AuthStack() {
   }
 
   if (currentScreen === 'Home') {
-    return <HomeScreen onLogout={() => setCurrentScreen('Login')} />;
+    return <ServicesStack onLogout={() => setCurrentScreen('Login')} />;
   }
 
   return (

@@ -9,7 +9,6 @@ import {
 } from 'react-native';
 import Svg, {
   Circle,
-  Line,
   Path,
   Rect,
   SvgProps,
@@ -31,6 +30,7 @@ import BottomExploreIcon from '../../../assets/images/icons/navigation_icon.svg'
 import BottomMoreIcon from '../../../assets/images/icons/bizz_logo.svg';
 
 type HomeScreenProps = {
+  onGetStarted?: () => void;
   onLogout?: () => void;
 };
 
@@ -189,7 +189,7 @@ function BottomTab({
   );
 }
 
-function HomeScreen({ onLogout }: HomeScreenProps) {
+function HomeScreen({ onGetStarted }: HomeScreenProps) {
   return (
     <SafeAreaView style={styles.safeArea}>
       <View style={styles.screen}>
@@ -228,7 +228,7 @@ function HomeScreen({ onLogout }: HomeScreenProps) {
               Tell us how we can help you today
             </Text>
 
-            <Pressable onPress={onLogout} style={styles.heroButton}>
+            <Pressable onPress={onGetStarted} style={styles.heroButton}>
               <Text style={styles.heroButtonText}>Get Started</Text>
             </Pressable>
           </View>
