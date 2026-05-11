@@ -1,5 +1,6 @@
 import React from 'react';
 import { StyleSheet, Text, View } from 'react-native';
+import Svg, { Defs, LinearGradient, Rect, Stop } from 'react-native-svg';
 
 import ExclusiveImage from '../../../assets/images/exclusive_image.svg';
 import MoneyImage from '../../../assets/images/money_imge.svg';
@@ -18,6 +19,18 @@ function BundleCard({
   return (
     <View style={styles.wrapper}>
       <View style={styles.card}>
+        <View pointerEvents="none" style={StyleSheet.absoluteFill}>
+          <Svg height="100%" width="100%">
+            <Defs>
+              <LinearGradient id="cardGrad" x1="0" y1="0" x2="1" y2="0">
+                <Stop offset="0" stopColor="#9581F1" />
+                <Stop offset="1" stopColor="#552389" />
+              </LinearGradient>
+            </Defs>
+            <Rect fill="url(#cardGrad)" height="100%" rx={14} width="100%" />
+          </Svg>
+        </View>
+
         <MoneyImage height={56} style={styles.moneyImage} width={56} />
 
         <View style={styles.content}>
@@ -46,7 +59,6 @@ const styles = StyleSheet.create({
   card: {
     minHeight: 68,
     borderRadius: 14,
-    backgroundColor: '#5B2796',
     flexDirection: 'row',
     alignItems: 'center',
     overflow: 'hidden',

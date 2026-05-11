@@ -13,7 +13,6 @@ import Svg, { Path } from 'react-native-svg';
 
 type BundleBackgroundScreenProps = {
   children?: React.ReactNode;
-  customTitleEnabled?: boolean;
   contentContainerStyle?: StyleProp<ViewStyle>;
   headerRight?: React.ReactNode;
   onBack?: () => void;
@@ -40,15 +39,13 @@ function BackIcon() {
 
 function BundleBackgroundScreen({
   children,
-  customTitleEnabled = false,
   contentContainerStyle,
   headerRight,
   onBack,
   title,
   titleStyle,
 }: BundleBackgroundScreenProps) {
-  const resolvedTitle =
-    customTitleEnabled && title ? title : DEFAULT_BUNDLE_HEADER_TITLE;
+  const resolvedTitle = title ?? DEFAULT_BUNDLE_HEADER_TITLE;
 
   return (
     <SafeAreaView style={styles.safeArea}>
@@ -100,7 +97,7 @@ const styles = StyleSheet.create({
     elevation: 2,
   },
   statusBarSpacing: {
-    height: 10,
+    height: 30,
   },
   headerBar: {
     minHeight: 56,
@@ -123,7 +120,7 @@ const styles = StyleSheet.create({
   title: {
     fontSize: 14,
     lineHeight: 20,
-    fontWeight: '500',
+    fontWeight: '600',
     color: '#3F3A37',
   },
   headerRightWrap: {

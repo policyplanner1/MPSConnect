@@ -6,101 +6,79 @@ import {
   Text,
   View,
 } from 'react-native';
-import Svg, {
-  Circle,
-  Path,
-} from 'react-native-svg';
+import Svg, { Path } from 'react-native-svg';
 
-import NewHomePackImage from '../../../assets/images/newhomepack.svg';
+import NewlyMarriedImage from '../../../assets/images/bundleservicesicons/nhp-newlymarried.svg';
 import NhpAadharIcon from '../../../assets/images/bundleservicesicons/nhp-addhar.svg';
-import NhpMsebIcon from '../../../assets/images/bundleservicesicons/nhp-mseb.svg';
+import NhpDiamondRingIcon from '../../../assets/images/bundleservicesicons/nhp-diamond-ring.svg';
+import NhpHealthInsuranceIcon from '../../../assets/images/bundleservicesicons/nhp-health-insurance.svg';
 import NhpPanIcon from '../../../assets/images/bundleservicesicons/nhp-pan.svg';
-import NhpPropertyIcon from '../../../assets/images/bundleservicesicons/nhp-property.svg';
-import NhpRentIcon from '../../../assets/images/bundleservicesicons/nhp-rent.svg';
+import NhpPassportIcon from '../../../assets/images/bundleservicesicons/nhp-passport.svg';
 import BundleBackgroundScreen from '../components/BundleBackgroundScreen';
 import BundleButton from '../components/BundleButton';
 import BundleCard from '../components/BundleCard';
 
-type NewHomePackScreenProps = {
+type NewMarriedPackScreenProps = {
   onBack?: () => void;
 };
 
-type BundleItem = {
+type MarriedItem = {
   id: string;
   title: string;
   description: string;
   oldPrice: string;
   price: string;
   badge: string;
-  icon: 'rent' | 'mseb' | 'property' | 'aadhar' | 'pan';
+  icon: 'ring' | 'aadhar' | 'pan' | 'passport' | 'insurance';
 };
 
-const BUNDLE_ITEMS: BundleItem[] = [
+const MARRIED_ITEMS: MarriedItem[] = [
   {
-    id: 'rent-agreement',
-    title: 'Rent Agreement Regist...',
+    id: 'marriage-certificate',
+    title: 'Marriage Certificate',
     description: 'We handle everything from drafting and collecting doc...',
-    oldPrice: '\u20B91000',
-    price: '\u20B9700',
+    oldPrice: '₹1000',
+    price: '₹700',
     badge: 'Save 30%',
-    icon: 'rent',
+    icon: 'ring',
   },
   {
-    id: 'mseb-name-change',
-    title: 'MSEB Name Change',
+    id: 'aadhar-card-update',
+    title: 'Aadhaar Card update',
     description: 'We handle everything from drafting and collecting doc...',
-    oldPrice: '\u20B91500',
-    price: '\u20B91200',
-    badge: 'Save 30%',
-    icon: 'mseb',
-  },
-  {
-    id: 'property-tax-name-change',
-    title: 'Property Tax Name Ch...',
-    description: 'We handle everything from drafting and collecting doc...',
-    oldPrice: '\u20B94000',
-    price: '\u20B93000',
-    badge: 'Save 30%',
-    icon: 'property',
-  },
-  {
-    id: 'correction-aadhar',
-    title: 'Correction in Aadhar C...',
-    description: 'We handle everything from drafting and collecting doc...',
-    oldPrice: '\u20B9200',
-    price: '\u20B9150',
+    oldPrice: '₹1500',
+    price: '₹1200',
     badge: 'Save 30%',
     icon: 'aadhar',
   },
   {
-    id: 'correction-pan',
-    title: 'Correction in PAN C...',
+    id: 'pan-card-update',
+    title: 'PAN Card Update',
     description: 'We handle everything from drafting and collecting doc...',
-    oldPrice: '\u20B9350',
-    price: '\u20B9175',
+    oldPrice: '₹4000',
+    price: '₹3000',
     badge: 'Save 30%',
     icon: 'pan',
   },
+  {
+    id: 'passport',
+    title: 'Passport',
+    description: 'We handle everything from drafting and collecting doc...',
+    oldPrice: '₹200',
+    price: '₹150',
+    badge: 'Save 30%',
+    icon: 'passport',
+  },
+  {
+    id: 'health-insurance',
+    title: 'Health Insurance',
+    description: 'We handle everything from drafting and collecting doc...',
+    oldPrice: '₹350',
+    price: '₹175',
+    badge: 'Save 30%',
+    icon: 'insurance',
+  },
 ];
-
-function ShareIcon() {
-  return (
-    <View style={styles.shareButton}>
-      <Svg width={15} height={15} viewBox="0 0 24 24">
-        <Circle cx="18" cy="5" r="2" fill="#8C8C95" />
-        <Circle cx="6" cy="12" r="2" fill="#8C8C95" />
-        <Circle cx="18" cy="19" r="2" fill="#8C8C95" />
-        <Path
-          d="M8 11L16 6.5M8 13L16 17.5"
-          fill="none"
-          stroke="#8C8C95"
-          strokeLinecap="round"
-          strokeWidth={1.6}
-        />
-      </Svg>
-    </View>
-  );
-}
 
 function CheckSquare({ checked }: { checked: boolean }) {
   return (
@@ -138,22 +116,15 @@ function TrashIcon() {
   );
 }
 
-function BundleItemCard({
-  title,
-  description,
-  oldPrice,
-  price,
-  badge,
-  icon,
-}: BundleItem) {
+function MarriedItemCard({ title, description, oldPrice, price, badge, icon }: MarriedItem) {
   const [checked, setChecked] = useState(false);
 
   const renderIcon = () => {
-    if (icon === 'mseb') return <NhpMsebIcon width={44} height={44} />;
-    if (icon === 'property') return <NhpPropertyIcon width={44} height={44} />;
     if (icon === 'aadhar') return <NhpAadharIcon width={44} height={44} />;
     if (icon === 'pan') return <NhpPanIcon width={44} height={44} />;
-    return <NhpRentIcon width={44} height={44} />;
+    if (icon === 'passport') return <NhpPassportIcon width={44} height={44} />;
+    if (icon === 'insurance') return <NhpHealthInsuranceIcon width={44} height={44} />;
+    return <NhpDiamondRingIcon width={44} height={44} />;
   };
 
   return (
@@ -224,37 +195,24 @@ function FullPackageSection() {
         </Pressable>
 
         <View style={styles.cartSummaryWrap}>
-          <BundleButton label={'\u20B95,225+ \u2B50 673'} price="" />
+          <BundleButton label={'₹5,225+ ⭐ 673'} price="" />
         </View>
       </View>
     </View>
   );
 }
 
-function NewHomePackScreen({ onBack }: NewHomePackScreenProps) {
+function NewMarriedPackScreen({ onBack }: NewMarriedPackScreenProps) {
   const [activeTab, setActiveTab] = useState<'bundle' | 'individual'>('bundle');
 
   return (
-    <BundleBackgroundScreen onBack={onBack}>
+    <BundleBackgroundScreen onBack={onBack} title="Newly married Set Up Pack">
       <ScrollView
         bounces={false}
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}>
         <View style={styles.heroCard}>
-          <NewHomePackImage height={180} width="90%" />
-
-          <View style={styles.heroTextOverlay}>
-            <Text style={styles.heroTitle}>Update Property Tax Ownership Smoothly</Text>
-          </View>
-
-          <View style={styles.heroBulletsOverlay}>
-            <Text style={styles.bulletText}>{'\u2022'} Accurate Filing.</Text>
-            <Text style={styles.bulletText}>{'\u2022'} Trusted Support.</Text>
-          </View>
-
-          <View style={styles.heroShareRow}>
-            <ShareIcon />
-          </View>
+          <NewlyMarriedImage height={180} width="100%" />
         </View>
 
         <View style={styles.segmentWrap}>
@@ -276,7 +234,7 @@ function NewHomePackScreen({ onBack }: NewHomePackScreenProps) {
 
         <View style={styles.promoCard}>
           <BundleCard
-            highlightText={activeTab === 'bundle' ? 'Flat \u20B9500 saved on this Bundle' : 'Save \u20B9200 more when bundled'}
+            highlightText={activeTab === 'bundle' ? 'Flat ₹500 saved on this Bundle' : 'Save ₹200 more when bundled'}
             subtitle={activeTab === 'bundle' ? 'Special combo pricing unlocked' : 'Switch to Bundle Price for more savings'}
             titleSuffix=""
           />
@@ -285,8 +243,8 @@ function NewHomePackScreen({ onBack }: NewHomePackScreenProps) {
         <Text style={styles.selectionText}>Selected 5 items</Text>
 
         <View style={styles.itemList}>
-          {BUNDLE_ITEMS.map(item => (
-            <BundleItemCard key={item.id} {...item} />
+          {MARRIED_ITEMS.map(item => (
+            <MarriedItemCard key={item.id} {...item} />
           ))}
         </View>
 
@@ -300,66 +258,24 @@ const styles = StyleSheet.create({
   scrollContent: {
     paddingBottom: 18,
   },
-  shareButton: {
-    width: 34,
-    height: 34,
-    borderRadius: 17,
-    borderWidth: 1,
-    borderColor: '#E7E1D8',
-    backgroundColor: '#FFFFFF',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
   heroCard: {
     backgroundColor: '#FFFFFF',
     position: 'relative',
     marginVertical: 14,
     overflow: 'hidden',
   },
-  heroTextOverlay: {
-    position: 'absolute',
-    top: 18,
-    right: 10,
-    width: '48%',
-  },
-  heroBulletsOverlay: {
-    position: 'absolute',
-    bottom: 62,
-    right: 14,
-  },
-  heroTitle: {
-    fontSize: 17,
-    lineHeight: 18,
-    fontWeight: '600',
-    color: '#3E238D',
-  },
-  bulletGroup: {
-    marginTop: 10,
-    paddingLeft: 10,
-  },
-  bulletText: {
-    fontSize: 13,
-    lineHeight: 20,
-    fontWeight: '400',
-    color: '#6D6A73',
-  },
-  heroShareRow: {
-    position: 'absolute',
-    right: 10,
-    bottom: 10,
-  },
   segmentWrap: {
     flexDirection: 'row',
     alignItems: 'center',
     marginHorizontal: 28,
-    marginTop: 2,
+    marginTop: 0,
     padding: 3,
     borderRadius: 18,
     backgroundColor: '#F0EEEB',
   },
   segmentButton: {
     flex: 1,
-    height: 30,
+    height: 32,
     borderRadius: 13,
     alignItems: 'center',
     justifyContent: 'center',
@@ -368,8 +284,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#111111',
   },
   segmentText: {
-    fontSize: 11,
-    fontWeight: '500',
+    fontSize: 12,
     color: '#4B4747',
   },
   segmentTextActive: {
@@ -380,14 +295,14 @@ const styles = StyleSheet.create({
     marginTop: 10,
   },
   selectionText: {
-    marginTop: 14,
-    marginHorizontal: 8,
+    marginTop: 12,
+    marginHorizontal: 10,
     fontSize: 13,
     color: '#6D6A73',
   },
   itemList: {
     marginTop: 4,
-    paddingHorizontal: 13,
+    paddingHorizontal: 10,
   },
   itemCard: {
     flexDirection: 'row',
@@ -398,7 +313,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#FFFFFF',
     paddingTop: 28,
     paddingBottom: 14,
-    paddingLeft: 13,
+    paddingLeft: 10,
     paddingRight: 10,
     marginBottom: 10,
     position: 'relative',
@@ -440,7 +355,6 @@ const styles = StyleSheet.create({
   itemTitle: {
     fontSize: 14,
     lineHeight: 20,
-    fontWeight: '600',
     color: '#37323A',
     marginBottom: 4,
   },
@@ -456,7 +370,6 @@ const styles = StyleSheet.create({
   },
   savePillText: {
     fontSize: 11,
-    fontWeight: '700',
     color: '#A26BE8',
   },
   itemDescription: {
@@ -478,7 +391,6 @@ const styles = StyleSheet.create({
   },
   newPrice: {
     fontSize: 14,
-    fontWeight: '700',
     color: '#25A545',
   },
   itemDeleteBtn: {
@@ -518,7 +430,6 @@ const styles = StyleSheet.create({
   },
   saveLaterText: {
     fontSize: 12,
-    fontWeight: '700',
     color: '#3E238D',
   },
   statsRow: {
@@ -538,7 +449,6 @@ const styles = StyleSheet.create({
   },
   statValue: {
     fontSize: 12,
-    fontWeight: '800',
     color: '#3E238D',
     marginBottom: 3,
     textAlign: 'center',
@@ -565,7 +475,6 @@ const styles = StyleSheet.create({
   },
   addToCartButtonText: {
     fontSize: 13,
-    fontWeight: '700',
     color: '#7C3FCC',
   },
   cartSummaryWrap: {
@@ -573,4 +482,4 @@ const styles = StyleSheet.create({
   },
 });
 
-export default NewHomePackScreen;
+export default NewMarriedPackScreen;

@@ -1,13 +1,21 @@
 import React, { useState } from 'react';
 
 import BundlesStack from '../../bundles/navigation/BundlesStack';
+import NewJobPackScreen from '../../bundles/screens/NewJobPackScreen';
+import NewMarriedPackScreen from '../../bundles/screens/NewMarriedPackScreen';
+import TravelPackScreen from '../../bundles/screens/TravelPackScreen';
+import BuyingPropertyPackScreen from '../../bundles/screens/BuyingPropertyPackScreen';
 import ASPScreen from '../screens/ASPScreen';
 import HelpandSupportScreen from '../screens/HelpandSupportScreen';
 
 export type ChatbotScreenName =
   | 'HelpAndSupport'
   | 'ASP'
-  | 'NewHomePack';
+  | 'NewHomePack'
+  | 'NewJobPack'
+  | 'NewMarriedPack'
+  | 'TravelPack'
+  | 'BuyingPropertyPack';
 
 type ChatbotStackProps = {
   onClose?: () => void;
@@ -31,13 +39,37 @@ function ChatbotStack({ onClose }: ChatbotStackProps) {
     return <BundlesStack onClose={() => setCurrentScreen('HelpAndSupport')} />;
   }
 
+  if (currentScreen === 'NewJobPack') {
+    return <NewJobPackScreen onBack={() => setCurrentScreen('HelpAndSupport')} />;
+  }
+
+  if (currentScreen === 'NewMarriedPack') {
+    return <NewMarriedPackScreen onBack={() => setCurrentScreen('HelpAndSupport')} />;
+  }
+
+  if (currentScreen === 'TravelPack') {
+    return <TravelPackScreen onBack={() => setCurrentScreen('HelpAndSupport')} />;
+  }
+
+  if (currentScreen === 'BuyingPropertyPack') {
+    return <BuyingPropertyPackScreen onBack={() => setCurrentScreen('HelpAndSupport')} />;
+  }
+
   if (currentScreen === 'HelpAndSupport') {
     return (
       <HelpandSupportScreen
         onBack={onClose}
         onCategorySelect={categoryId => {
-          if (categoryId === 'marriage' || categoryId === 'house') {
+          if (categoryId === 'house') {
             setCurrentScreen('NewHomePack');
+          } else if (categoryId === 'marriage') {
+            setCurrentScreen('NewMarriedPack');
+          } else if (categoryId === 'job') {
+            setCurrentScreen('NewJobPack');
+          } else if (categoryId === 'travel') {
+            setCurrentScreen('TravelPack');
+          } else if (categoryId === 'property') {
+            setCurrentScreen('BuyingPropertyPack');
           }
         }}
         onChatWithUs={selectedResponseKey => {
