@@ -1,12 +1,14 @@
 import React from 'react';
 import {
+  ActivityIndicator,
+  Image,
   Pressable,
-  SafeAreaView,
   ScrollView,
   StyleSheet,
   Text,
   View,
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import Svg, {
   Circle,
   Path,
@@ -14,15 +16,11 @@ import Svg, {
   SvgProps,
 } from 'react-native-svg';
 
-import PassportGdIcon from '../../../assets/images/icons/passport_gd.svg';
-import PanGdIcon from '../../../assets/images/icons/id-card_gd.svg';
-import AadhaarGdIcon from '../../../assets/images/icons/addhar_gd.svg';
-import BikeGdIcon from '../../../assets/images/icons/motorbike_gd.svg';
-import CarGdIcon from '../../../assets/images/icons/automobile_gd.svg';
-
 import InsuranceCardIcon from '../../../assets/images/icons/insurance.svg';
 import TaxCardIcon from '../../../assets/images/icons/tax_s.svg';
 import MutualFundCardIcon from '../../../assets/images/icons/mutual_fund.svg';
+import { IMAGE_BASE_URL } from '../../../config/env';
+import { useGovernmentServices } from '../hooks/useServices';
 
 import BottomHomeIcon from '../../../assets/images/icons/home_icon.svg';
 import BottomRequestsIcon from '../../../assets/images/icons/shopping-bag.svg';
@@ -32,6 +30,9 @@ import BottomMoreIcon from '../../../assets/images/icons/bizz_logo.svg';
 type HomeScreenProps = {
   onGetStarted?: () => void;
   onLogout?: () => void;
+  onServicePress?: (serviceId: number) => void;
+  onGovernmentDocuments?: () => void;
+  onInsurancePress?: () => void;
 };
 
 type SvgIconType = React.FC<SvgProps>;
@@ -102,20 +103,25 @@ function SectionCard({
   compact = false,
   rightChevron = false,
   blueHeader = false,
+  onHeaderPress,
 }: {
   title?: string;
   children: React.ReactNode;
   compact?: boolean;
   rightChevron?: boolean;
   blueHeader?: boolean;
+  onHeaderPress?: () => void;
 }) {
   return (
     <View style={[styles.card, compact ? styles.compactCard : undefined]}>
       {title ? (
-        <View style={[styles.cardHeader, blueHeader ? styles.blueCardHeader : undefined]}>
+        <Pressable
+          onPress={onHeaderPress}
+          disabled={!onHeaderPress}
+          style={[styles.cardHeader, blueHeader ? styles.blueCardHeader : undefined]}>
           <Text style={styles.cardTitle}>{title}</Text>
           {rightChevron ? <Icon kind="chevron" color="#111111" size={22} /> : null}
-        </View>
+        </Pressable>
       ) : null}
       {children}
     </View>
@@ -123,36 +129,46 @@ function SectionCard({
 }
 
 function QuickService({
-  IconComponent,
+  imageUri,
   label,
+  onPress,
 }: {
-  IconComponent: SvgIconType;
+  imageUri: string;
   label: string;
+  onPress?: () => void;
 }) {
   return (
-    <View style={styles.quickItem}>
+    <Pressable onPress={onPress} style={styles.quickItem}>
       <View style={styles.quickIconWrap}>
-        <IconComponent width={34} height={34} />
+        <Image
+          source={{ uri: imageUri }}
+          style={styles.quickServiceImage}
+          resizeMode="contain"
+        />
       </View>
-      <Text style={styles.quickLabel}>{label}</Text>
-    </View>
+      <Text numberOfLines={2} style={styles.quickLabel}>{label}</Text>
+    </Pressable>
   );
 }
 
 function SmallCategory({
   IconComponent,
   label,
+  onPress,
 }: {
   IconComponent: SvgIconType;
   label: string;
+  onPress?: () => void;
 }) {
   return (
-    <View style={styles.smallCategory}>
+    <Pressable
+      onPress={onPress}
+      style={({ pressed }) => [styles.smallCategory, pressed && { opacity: 0.75 }]}>
       <Text style={styles.smallCategoryLabel}>{label}</Text>
       <View style={styles.smallIconWrap}>
         <IconComponent width={42} height={42} />
       </View>
-    </View>
+    </Pressable>
   );
 }
 
@@ -189,7 +205,9 @@ function BottomTab({
   );
 }
 
-function HomeScreen({ onGetStarted }: HomeScreenProps) {
+function HomeScreen({ onGetStarted, onServicePress, onGovernmentDocuments, onInsurancePress }: HomeScreenProps) {
+  const { services: govServices, loading: govLoading } = useGovernmentServices();
+
   return (
     <SafeAreaView style={styles.safeArea}>
       <View style={styles.screen}>
@@ -274,18 +292,30 @@ function HomeScreen({ onGetStarted }: HomeScreenProps) {
               </View>
             </SectionCard>
 
-            <SectionCard title="Government Documents" rightChevron>
-              <View style={styles.quickGrid}>
-                <QuickService IconComponent={PassportGdIcon} label="Passport" />
-                <QuickService IconComponent={PanGdIcon} label="PAN Card" />
-                <QuickService IconComponent={AadhaarGdIcon} label={'Aadhaar\nCard'} />
-                <QuickService IconComponent={BikeGdIcon} label={'2 wheeler\nLicense'} />
-                <QuickService IconComponent={CarGdIcon} label={'4 wheeler\nLicense'} />
-              </View>
+            <SectionCard title="Government Documents" rightChevron onHeaderPress={onGovernmentDocuments}>
+              {govLoading ? (
+                <View style={styles.loadingContainer}>
+                  <ActivityIndicator size="small" color="#9E8DFF" />
+                </View>
+              ) : (
+                <ScrollView
+                  horizontal
+                  showsHorizontalScrollIndicator={false}
+                  contentContainerStyle={styles.quickGrid}>
+                  {govServices.map(service => (
+                    <QuickService
+                      key={service.id}
+                      imageUri={`${service.service_image}`}
+                      label={service.name}
+                      onPress={() => onServicePress?.(service.id)}
+                    />
+                  ))}
+                </ScrollView>
+              )}
             </SectionCard>
 
             <View style={styles.smallRow}>
-              <SmallCategory IconComponent={InsuranceCardIcon} label="Insurance" />
+              <SmallCategory IconComponent={InsuranceCardIcon} label="Insurance" onPress={onInsurancePress} />
               <SmallCategory IconComponent={TaxCardIcon} label="Tax Services" />
               <SmallCategory IconComponent={MutualFundCardIcon} label="Mutual Funds" />
             </View>
@@ -537,24 +567,29 @@ const styles = StyleSheet.create({
 
   quickGrid: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
     paddingHorizontal: 10,
     paddingTop: 14,
     paddingBottom: 18,
+    gap: 12,
   },
 
   quickItem: {
-    width: '19%',
+    width: 68,
     alignItems: 'center',
     justifyContent: 'flex-start',
   },
 
   quickIconWrap: {
     height: 48,
-    width: 42,
+    width: 48,
     alignItems: 'center',
     justifyContent: 'center',
     marginBottom: 7,
+  },
+
+  quickServiceImage: {
+    width: 40,
+    height: 40,
   },
 
   quickLabel: {
@@ -563,6 +598,12 @@ const styles = StyleSheet.create({
     color: '#333333',
     lineHeight: 13,
     fontWeight: '400',
+  },
+
+  loadingContainer: {
+    height: 90,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
 
   smallRow: {
