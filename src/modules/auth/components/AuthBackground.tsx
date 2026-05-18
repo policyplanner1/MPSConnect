@@ -25,9 +25,9 @@ function AuthBackground({
                 <Stop offset="100%" stopColor="#6A1B9A" />
               </LinearGradient>
               <LinearGradient id="authSoftGradient" x1="0%" x2="0%" y1="0%" y2="100%">
-                <Stop offset="0%" stopColor="#EEDBFF" />
-                <Stop offset="40%" stopColor="#EFE4FF" />
-                <Stop offset="100%" stopColor="#DDEBFF" />
+                <Stop offset="0%" stopColor="#EDE4F7" />
+                <Stop offset="45%" stopColor="#EFE8FF" />
+                <Stop offset="100%" stopColor="#DDE9FF" />
               </LinearGradient>
             </Defs>
 

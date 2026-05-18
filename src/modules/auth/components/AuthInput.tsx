@@ -7,6 +7,7 @@ import {
   View,
   ViewStyle,
 } from 'react-native';
+import { inter18 } from '../../../core/theme/typography';
 
 type AuthInputProps = TextInputProps & {
   rightElement?: React.ReactNode;
@@ -56,6 +57,7 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: '#111827',
     paddingVertical: 0,
+    ...inter18('regular'),
   },
   rightElement: {
     marginLeft: 10,

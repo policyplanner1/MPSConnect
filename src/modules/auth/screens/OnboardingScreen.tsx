@@ -1,4 +1,4 @@
-import React, { useRef, useState } from 'react';
+import React, { useCallback, useRef, useState } from 'react';
 import {
   FlatList,
   ListRenderItemInfo,
@@ -11,10 +11,13 @@ import {
   useWindowDimensions,
   View,
 } from 'react-native';
+import Svg, { Defs, RadialGradient, Rect, Stop } from 'react-native-svg';
+import { inter18 } from '../../../core/theme/typography';
 import Slider1 from '../../../assets/images/slider1.svg';
 import Slider2 from '../../../assets/images/slider2.svg';
 import Slider3 from '../../../assets/images/slider3.svg';
 import Slider4 from '../../../assets/images/slider4.svg';
+import MaterialIcon from '../components/MaterialIcon';
 
 type Slide = {
   id: string;
@@ -32,25 +35,25 @@ const slides: Slide[] = [
   {
     id: 'trusted-desk',
     title: 'A trusted service desk in your pocket',
-    accent: '#E0FFD8',
+    accent: '#E8F5E9',
     Illustration: Slider1,
   },
   {
     id: 'experienced-help',
     title: 'Experienced help you can rely on',
-    accent: '#D8E3FF',
+    accent: '#E8EEF9',
     Illustration: Slider2,
   },
   {
     id: 'process-care',
     title: 'We take care of the process',
-    accent: '#FFD8FE',
+    accent: '#F8E8F5',
     Illustration: Slider3,
   },
   {
     id: 'timely-processing',
     title: 'Timely and efficient processing',
-    accent: '#FFE5D8',
+    accent: '#FFF4E8',
     Illustration: Slider4,
   },
 ];
@@ -59,6 +62,15 @@ function OnboardingScreen({ onSignIn, onSkip }: OnboardingScreenProps) {
   const { width } = useWindowDimensions();
   const listRef = useRef<FlatList<Slide>>(null);
   const [activeIndex, setActiveIndex] = useState(0);
+
+  const getItemLayout = useCallback(
+    (_: ArrayLike<Slide> | null | undefined, index: number) => ({
+      length: width,
+      offset: width * index,
+      index,
+    }),
+    [width],
+  );
 
   const handleNext = () => {
     const isLastSlide = activeIndex === slides.length - 1;
@@ -69,7 +81,10 @@ function OnboardingScreen({ onSignIn, onSkip }: OnboardingScreenProps) {
     }
 
     const nextIndex = activeIndex + 1;
-    listRef.current?.scrollToIndex({ index: nextIndex, animated: true });
+    listRef.current?.scrollToOffset({
+      offset: nextIndex * width,
+      animated: true,
+    });
     setActiveIndex(nextIndex);
   };
 
@@ -77,7 +92,7 @@ function OnboardingScreen({ onSignIn, onSkip }: OnboardingScreenProps) {
     event: NativeSyntheticEvent<NativeScrollEvent>,
   ) => {
     const nextIndex = Math.round(event.nativeEvent.contentOffset.x / width);
-    setActiveIndex(nextIndex);
+    setActiveIndex(Math.min(Math.max(nextIndex, 0), slides.length - 1));
   };
 
   const renderSlide = ({ item }: ListRenderItemInfo<Slide>) => {
@@ -85,7 +100,7 @@ function OnboardingScreen({ onSignIn, onSkip }: OnboardingScreenProps) {
 
     return (
       <View style={[styles.slide, { width }]}>
-        <Text style={styles.title}>{item.title}</Text>
+        <Text style={[styles.title, inter18('bold')]}>{item.title}</Text>
 
         <View style={styles.heroViewport}>
           <View
@@ -101,7 +116,7 @@ function OnboardingScreen({ onSignIn, onSkip }: OnboardingScreenProps) {
           accessibilityRole="button"
           onPress={handleNext}
           style={styles.arrowButton}>
-          <Text style={styles.arrowText}>{'\u2192'}</Text>
+          <MaterialIcon color="#111827" name="arrow-forward" size={22} />
         </Pressable>
       </View>
     );
@@ -110,15 +125,35 @@ function OnboardingScreen({ onSignIn, onSkip }: OnboardingScreenProps) {
   return (
     <SafeAreaView style={styles.safeArea}>
       <View style={styles.container}>
+        <View pointerEvents="none" style={styles.bottomGlow}>
+          <Svg height="100%" preserveAspectRatio="none" width="100%">
+            <Defs>
+              <RadialGradient
+                cx="50%"
+                cy="100%"
+                fx="50%"
+                fy="100%"
+                id="onboardingGlow"
+                r="85%">
+                <Stop offset="0%" stopColor="#E9D5FF" stopOpacity="0.55" />
+                <Stop offset="55%" stopColor="#FBCFE8" stopOpacity="0.2" />
+                <Stop offset="100%" stopColor="#FFFFFF" stopOpacity="0" />
+              </RadialGradient>
+            </Defs>
+            <Rect fill="url(#onboardingGlow)" height="100%" width="100%" x="0" y="0" />
+          </Svg>
+        </View>
+
         <FlatList
           data={slides}
+          getItemLayout={getItemLayout}
           horizontal
           keyExtractor={item => item.id}
           pagingEnabled
           ref={listRef}
           renderItem={renderSlide}
-          style={styles.slider}
           showsHorizontalScrollIndicator={false}
+          style={styles.slider}
           onMomentumScrollEnd={handleMomentumEnd}
         />
 
@@ -145,7 +180,7 @@ function OnboardingScreen({ onSignIn, onSkip }: OnboardingScreenProps) {
           accessibilityRole="button"
           onPress={onSkip}
           style={styles.skipButton}>
-          <Text style={styles.skipText}>Skip for now</Text>
+          <Text style={[styles.skipText, inter18('medium')]}>Skip for now</Text>
         </Pressable>
       </View>
     </SafeAreaView>
@@ -155,13 +190,22 @@ function OnboardingScreen({ onSignIn, onSkip }: OnboardingScreenProps) {
 const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
-    backgroundColor: '#fffaf5',
+    backgroundColor: '#FFFFFF',
   },
   container: {
     flex: 1,
   },
+  bottomGlow: {
+    position: 'absolute',
+    left: 0,
+    right: 0,
+    bottom: 0,
+    height: 260,
+    zIndex: 0,
+  },
   slider: {
     flex: 1,
+    zIndex: 1,
   },
   slide: {
     flex: 1,
@@ -172,80 +216,74 @@ const styles = StyleSheet.create({
     paddingBottom: 0,
   },
   title: {
-    maxWidth: 210,
-    fontSize: 18,
-    lineHeight: 24,
-    fontWeight: '700',
+    maxWidth: 320,
+    fontSize: 22,
+    lineHeight: 30,
     textAlign: 'center',
-    color: '#171717',
-    marginTop: 34,
+    color: '#0A0A0A',
+    marginTop: 28,
   },
   heroViewport: {
     alignSelf: 'stretch',
     height: 430,
     alignItems: 'center',
     overflow: 'hidden',
-    marginTop: 32,
+    marginTop: 28,
     marginHorizontal: -28,
   },
   illustrationCircle: {
-    width: 410,
-    height: 410,
-    borderRadius: 205,
+    width: 400,
+    height: 400,
+    borderRadius: 200,
     alignItems: 'center',
     justifyContent: 'center',
     marginTop: 8,
     overflow: 'hidden',
   },
   arrowButton: {
-    width: 52,
-    height: 52,
-    borderRadius: 26,
-    backgroundColor: '#ffffff',
+    width: 56,
+    height: 56,
+    borderRadius: 28,
+    backgroundColor: '#FFFFFF',
     alignItems: 'center',
     justifyContent: 'center',
     shadowColor: '#000000',
-    shadowOpacity: 0.14,
-    shadowRadius: 14,
+    shadowOpacity: 0.12,
+    shadowRadius: 16,
     shadowOffset: {
       width: 0,
       height: 10,
     },
     elevation: 10,
-    marginTop: -52,
-  },
-  arrowText: {
-    fontSize: 21,
-    fontWeight: '400',
-    color: '#1f2937',
-    lineHeight: 21,
-    marginTop: -1,
+    marginTop: -56,
+    zIndex: 2,
   },
   skipText: {
-    fontSize: 13,
-    fontWeight: '500',
-    color: '#6b7280',
+    fontSize: 15,
+    color: '#374151',
   },
   pagination: {
     flexDirection: 'row',
     justifyContent: 'center',
     alignItems: 'center',
-    gap: 10,
-    paddingBottom: 10,
+    gap: 8,
+    paddingBottom: 8,
+    zIndex: 1,
   },
   skipButton: {
     alignItems: 'center',
-    paddingBottom: 26,
+    paddingBottom: 28,
+    zIndex: 1,
   },
   dot: {
-    width: 10,
-    height: 10,
-    borderRadius: 5,
-    backgroundColor: '#e5e7eb',
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+    backgroundColor: '#E5E7EB',
   },
   activeDot: {
-    width: 28,
-    borderRadius: 8,
+    width: 24,
+    borderRadius: 6,
   },
 });
 

@@ -3,6 +3,9 @@ import React, { useState } from 'react';
 import ChatbotStack from '../../chatbot/navigation/ChatbotStack';
 import HealthInsuranceStack from '../../healthInsurance/navigation/HealthInsuranceStack';
 import OtherInsuranceStack from '../../otherInsurance/navigation/OtherInsuranceStack';
+import NotificationScreen from '../../notifications/screens/NotificationScreen';
+import RefereAndEarn from '../../rewards/screens/RefereAndEarn';
+import RewardsHistoryScreen from '../../rewards/screens/RewardsHistoryScreen';
 import HomeScreen from '../screens/HomeScreen';
 import ServiceDetailScreen from '../screens/ServiceDetailScreen';
 import ServiceListScreen from '../screens/ServiceListScreen';
@@ -13,6 +16,9 @@ const HEALTH_INSURANCE_ID = 12;
 type ScreenState =
   | { name: 'Home' }
   | { name: 'HelpAndSupport' }
+  | { name: 'Notifications' }
+  | { name: 'RewardHistory' }
+  | { name: 'ReferAndEarn' }
   | { name: 'ServiceList'; categoryId: number }
   | { name: 'ServiceDetail'; serviceId: number; fromCategoryId?: number }
   | { name: 'HealthInsurance' }
@@ -27,6 +33,25 @@ function ServicesStack({ onLogout }: ServicesStackProps) {
 
   if (screen.name === 'HelpAndSupport') {
     return <ChatbotStack onClose={() => setScreen({ name: 'Home' })} />;
+  }
+
+  if (screen.name === 'Notifications') {
+    return <NotificationScreen onBack={() => setScreen({ name: 'Home' })} />;
+  }
+
+  if (screen.name === 'RewardHistory') {
+    return (
+      <RewardsHistoryScreen
+        onBack={() => setScreen({ name: 'Home' })}
+        onReferNow={() => setScreen({ name: 'ReferAndEarn' })}
+      />
+    );
+  }
+
+  if (screen.name === 'ReferAndEarn') {
+    return (
+      <RefereAndEarn onBack={() => setScreen({ name: 'RewardHistory' })} />
+    );
   }
 
   if (screen.name === 'HealthInsurance') {
@@ -61,7 +86,11 @@ function ServicesStack({ onLogout }: ServicesStackProps) {
               setScreen({ name: 'OtherInsurance', serviceId, service });
             }
           } else {
-            setScreen({ name: 'ServiceDetail', serviceId, fromCategoryId: categoryId });
+            setScreen({
+              name: 'ServiceDetail',
+              serviceId,
+              fromCategoryId: categoryId,
+            });
           }
         }}
       />
@@ -84,9 +113,15 @@ function ServicesStack({ onLogout }: ServicesStackProps) {
   return (
     <HomeScreen
       onGetStarted={() => setScreen({ name: 'HelpAndSupport' })}
-      onServicePress={serviceId => setScreen({ name: 'ServiceDetail', serviceId })}
-      onGovernmentDocuments={() => setScreen({ name: 'ServiceList', categoryId: 3 })}
+      onGovernmentDocuments={() =>
+        setScreen({ name: 'ServiceList', categoryId: 3 })
+      }
       onInsurancePress={() => setScreen({ name: 'ServiceList', categoryId: 2 })}
+      onOpenNotifications={() => setScreen({ name: 'Notifications' })}
+      onOpenRewards={() => setScreen({ name: 'RewardHistory' })}
+      onServicePress={serviceId =>
+        setScreen({ name: 'ServiceDetail', serviceId })
+      }
       onLogout={onLogout}
     />
   );

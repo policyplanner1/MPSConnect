@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import { getToken, removeToken } from '../../../core/utils/storage';
 import ForgotPasswordScreen from '../screens/ForgotPasswordScreen';
 import LoginScreen from '../screens/LoginScreen';
 import OnboardingScreen from '../screens/OnboardingScreen';
@@ -21,18 +22,50 @@ export type AuthScreenName =
 function AuthStack() {
   const [currentScreen, setCurrentScreen] =
     useState<AuthScreenName>('Splash');
+  const [resetEmail, setResetEmail] = useState('');
+  const [resetOtp, setResetOtp] = useState('');
 
   useEffect(() => {
     if (currentScreen !== 'Splash') {
       return;
     }
 
-    const timeoutId = setTimeout(() => {
-      setCurrentScreen('Onboarding');
-    }, 1600);
+    let isMounted = true;
 
-    return () => clearTimeout(timeoutId);
+    const bootstrap = async () => {
+      const token = await getToken();
+      await new Promise<void>(resolve => {
+        setTimeout(resolve, 1600);
+      });
+
+      if (!isMounted) {
+        return;
+      }
+
+      if (token) {
+        setCurrentScreen('Home');
+        return;
+      }
+
+      setCurrentScreen('Onboarding');
+    };
+
+    bootstrap();
+
+    return () => {
+      isMounted = false;
+    };
   }, [currentScreen]);
+
+  const handleLogout = async () => {
+    await removeToken();
+    setCurrentScreen('Login');
+  };
+
+  const clearResetFlow = () => {
+    setResetEmail('');
+    setResetOtp('');
+  };
 
   if (currentScreen === 'Splash') {
     return <SplashScreen />;
@@ -42,7 +75,10 @@ function AuthStack() {
     return (
       <LoginScreen
         onContinueToApp={() => setCurrentScreen('Home')}
-        onForgotPassword={() => setCurrentScreen('ForgotPassword')}
+        onForgotPassword={() => {
+          clearResetFlow();
+          setCurrentScreen('ForgotPassword');
+        }}
         onGoToRegister={() => setCurrentScreen('Register')}
       />
     );
@@ -60,7 +96,12 @@ function AuthStack() {
   if (currentScreen === 'ForgotPassword') {
     return (
       <ForgotPasswordScreen
-        onSubmit={() => setCurrentScreen('VerificationCode')}
+        onBackToLogin={() => setCurrentScreen('Login')}
+        onOtpSent={email => {
+          setResetEmail(email);
+          setResetOtp('');
+          setCurrentScreen('VerificationCode');
+        }}
       />
     );
   }
@@ -68,7 +109,12 @@ function AuthStack() {
   if (currentScreen === 'VerificationCode') {
     return (
       <VerificationCodeScreen
-        onVerify={() => setCurrentScreen('ResetPassword')}
+        email={resetEmail}
+        onBack={() => setCurrentScreen('ForgotPassword')}
+        onVerified={otp => {
+          setResetOtp(otp);
+          setCurrentScreen('ResetPassword');
+        }}
       />
     );
   }
@@ -76,13 +122,19 @@ function AuthStack() {
   if (currentScreen === 'ResetPassword') {
     return (
       <ResetPasswordScreen
-        onReset={() => setCurrentScreen('Login')}
+        email={resetEmail}
+        otp={resetOtp}
+        onBack={() => setCurrentScreen('VerificationCode')}
+        onReset={() => {
+          clearResetFlow();
+          setCurrentScreen('Login');
+        }}
       />
     );
   }
 
   if (currentScreen === 'Home') {
-    return <ServicesStack onLogout={() => setCurrentScreen('Login')} />;
+    return <ServicesStack onLogout={handleLogout} />;
   }
 
   return (

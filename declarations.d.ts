@@ -21,14 +21,6 @@ declare module 'react-native-vector-icons/MaterialIcons' {
 }
 
 declare module '@env' {
-  export const API_BASE_URL: string;
-  export const IMAGE_BASE_URL: string;
+  export const API_BASE_URL: string | undefined;
+  export const IMAGE_BASE_URL: string | undefined;
 }
-
-declare const process: {
-  env: {
-    API_BASE_URL?: string;
-    IMAGE_BASE_URL?: string;
-    [key: string]: string | undefined;
-  };
-};

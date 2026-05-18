@@ -1,6 +1,20 @@
-import React, { useState } from 'react';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import React, { useEffect, useState } from 'react';
+import {
+  ActivityIndicator,
+  Alert,
+  Pressable,
+  StyleSheet,
+  Text,
+  View,
+} from 'react-native';
+import { inter18 } from '../../../core/theme/typography';
 import MpscLogo from '../../../assets/images/mpsclogo.svg';
+import { pingApiServer } from '../../../core/api/healthCheck';
+import {
+  getAuthErrorMessage,
+  signupUser,
+  type SignupPayload,
+} from '../../../services/auth.service';
 import AuthBackground from '../components/AuthBackground';
 import AuthButton from '../components/AuthButton';
 import AuthInput from '../components/AuthInput';
@@ -11,12 +25,76 @@ type RegisterScreenProps = {
   onViewOnboardingAgain: () => void;
 };
 
+const emptyForm: SignupPayload = {
+  name: '',
+  email: '',
+  contactNumber: '',
+  password: '',
+};
+
+function validateSignupForm(form: SignupPayload): string | null {
+  if (form.name.trim().length < 2) {
+    return 'Name must be at least 2 characters.';
+  }
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email.trim())) {
+    return 'Please enter a valid email address.';
+  }
+  if (form.contactNumber.trim().length < 10) {
+    return 'Contact number must be at least 10 digits.';
+  }
+  if (form.password.length < 6) {
+    return 'Password must be at least 6 characters.';
+  }
+  return null;
+}
+
 function RegisterScreen({
   onBackToLogin,
+  onViewOnboardingAgain: _onViewOnboardingAgain,
 }: RegisterScreenProps) {
+  const [form, setForm] = useState<SignupPayload>(emptyForm);
   const [isPasswordHidden, setIsPasswordHidden] = useState(true);
-  const password = 'pass123';
-  const passwordValue = isPasswordHidden ? '*******' : password;
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  useEffect(() => {
+    if (!__DEV__) {
+      return;
+    }
+    pingApiServer().then(result => {
+      // eslint-disable-next-line no-console
+      console.log('[API ping]', result);
+    });
+  }, []);
+
+  const updateField = (field: keyof SignupPayload, value: string) => {
+    setForm(prev => ({ ...prev, [field]: value }));
+  };
+
+  const handleSignup = async () => {
+    const validationError = validateSignupForm(form);
+    if (validationError) {
+      Alert.alert('Validation', validationError);
+      return;
+    }
+
+    setIsSubmitting(true);
+    try {
+      const response = await signupUser({
+        name: form.name.trim(),
+        email: form.email.trim().toLowerCase(),
+        contactNumber: form.contactNumber.trim(),
+        password: form.password,
+      });
+
+      Alert.alert('Success', response.message, [
+        { text: 'OK', onPress: onBackToLogin },
+      ]);
+    } catch (error) {
+      Alert.alert('Error', getAuthErrorMessage(error));
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
 
   return (
     <AuthBackground>
@@ -24,9 +102,10 @@ function RegisterScreen({
         <View style={styles.topRow}>
           <Pressable
             accessibilityRole="button"
+            disabled={isSubmitting}
             onPress={onBackToLogin}
             style={styles.backButton}>
-            <Text style={styles.backArrow}>{'<'}</Text>
+            <MaterialIcon color="#111827" name="arrow-back" size={22} />
           </Pressable>
         </View>
 
@@ -37,68 +116,93 @@ function RegisterScreen({
         </View>
 
         <View style={styles.card}>
-          <Text style={styles.title}>Sign Up</Text>
-          <Text style={styles.subtitle}>
+          <Text style={[styles.title, inter18('bold')]}>Sign Up</Text>
+          <Text style={[styles.subtitle, inter18('regular')]}>
             Create an account to continue!
           </Text>
 
           <View style={styles.fieldGroup}>
-            <Text style={styles.label}>Name</Text>
+            <Text style={[styles.label, inter18('medium')]}>Name</Text>
             <AuthInput
+              autoCapitalize="words"
               containerStyle={styles.inputField}
+              editable={!isSubmitting}
+              onChangeText={text => updateField('name', text)}
               placeholder="Enter your name"
+              value={form.name}
             />
           </View>
 
           <View style={styles.fieldGroup}>
-            <Text style={styles.label}>Email</Text>
+            <Text style={[styles.label, inter18('medium')]}>Email</Text>
             <AuthInput
               autoCapitalize="none"
               containerStyle={styles.inputField}
+              editable={!isSubmitting}
               keyboardType="email-address"
+              onChangeText={text => updateField('email', text)}
               placeholder="Enter your email"
+              value={form.email}
             />
           </View>
 
           <View style={styles.fieldGroup}>
-            <Text style={styles.label}>Contact Number</Text>
+            <Text style={[styles.label, inter18('medium')]}>Contact Number</Text>
             <AuthInput
               containerStyle={styles.inputField}
+              editable={!isSubmitting}
               keyboardType="phone-pad"
+              onChangeText={text => updateField('contactNumber', text)}
               placeholder="Enter your contact number"
+              value={form.contactNumber}
             />
           </View>
 
           <View style={styles.fieldGroup}>
-            <Text style={styles.label}>Password</Text>
+            <Text style={[styles.label, inter18('medium')]}>Password</Text>
             <AuthInput
               containerStyle={styles.inputField}
-              editable={isPasswordHidden ? false : true}
+              editable={!isSubmitting}
+              onChangeText={text => updateField('password', text)}
               placeholder="Enter your password"
               rightElement={
                 <MaterialIcon
                   color="#A3AAB8"
+                  disabled={isSubmitting}
                   name={isPasswordHidden ? 'visibility-off' : 'visibility'}
                   onPress={() => setIsPasswordHidden(value => !value)}
                   size={18}
                   style={styles.eyeIcon}
                 />
               }
-              style={styles.passwordInput}
-              value={isPasswordHidden ? '' : passwordValue}
+              secureTextEntry={isPasswordHidden}
+              style={[styles.passwordInput, inter18('regular')]}
+              value={form.password}
             />
           </View>
 
           <View style={styles.buttonWrap}>
-            <AuthButton label="Register" onPress={onBackToLogin} />
+            {isSubmitting ? (
+              <View style={styles.loadingWrap}>
+                <ActivityIndicator color="#802091" size="small" />
+              </View>
+            ) : null}
+            <AuthButton
+              disabled={isSubmitting}
+              label={isSubmitting ? 'Registering...' : 'Register'}
+              onPress={handleSignup}
+            />
           </View>
 
-          <View style={styles.footerRow}>
-            <Text style={styles.footerText}>Already have an account?</Text>
-            <Pressable onPress={onBackToLogin}>
-              <Text style={styles.loginText}> Login</Text>
-            </Pressable>
-          </View>
+          <Text style={[styles.footerBlock, inter18('regular')]}>
+            <Text style={styles.footerMuted}>Already have an account?</Text>
+            <Text
+              onPress={isSubmitting ? undefined : onBackToLogin}
+              style={[styles.loginText, inter18('bold')]}>
+              {' '}
+              Login
+            </Text>
+          </Text>
         </View>
       </View>
     </AuthBackground>
@@ -120,16 +224,10 @@ const styles = StyleSheet.create({
     zIndex: 2,
   },
   backButton: {
-    width: 32,
-    height: 32,
+    width: 40,
+    height: 40,
     justifyContent: 'center',
     alignItems: 'center',
-  },
-  backArrow: {
-    fontSize: 18,
-    fontWeight: '500',
-    color: '#111827',
-    marginTop: -2,
   },
   logoWrap: {
     alignItems: 'center',
@@ -152,44 +250,48 @@ const styles = StyleSheet.create({
     elevation: 8,
   },
   card: {
-    backgroundColor: '#FFFFFFE6',
-    borderRadius: 10,
-    paddingHorizontal: 14,
+    backgroundColor: '#FFFFFF',
+    borderRadius: 28,
+    paddingHorizontal: 22,
     paddingTop: 34,
     paddingBottom: 30,
     minHeight: 275,
+    shadowColor: '#64748B',
+    shadowOpacity: 0.12,
+    shadowRadius: 24,
+    shadowOffset: {
+      width: 0,
+      height: 12,
+    },
+    elevation: 6,
   },
   title: {
-    fontSize: 24,
-    fontWeight: '700',
+    fontSize: 26,
     textAlign: 'center',
-    color: '#111827',
+    color: '#0B1B3A',
     marginBottom: 6,
   },
   subtitle: {
     fontSize: 14,
-    lineHeight: 16,
+    lineHeight: 20,
     textAlign: 'center',
     color: '#6B7280',
     marginBottom: 16,
   },
   fieldGroup: {
-    marginBottom: 10,
+    marginBottom: 12,
   },
   inputField: {
     marginTop: 2,
   },
   label: {
     fontSize: 13,
-    fontWeight: '500',
     color: '#6B7280',
     marginBottom: 6,
   },
   passwordInput: {
     fontSize: 14,
     color: '#111827',
-    fontWeight: '700',
-    letterSpacing: 1,
   },
   eyeIcon: {
     marginLeft: 4,
@@ -197,20 +299,22 @@ const styles = StyleSheet.create({
   buttonWrap: {
     marginTop: 20,
   },
-  footerRow: {
-    flexDirection: 'row',
-    justifyContent: 'center',
+  loadingWrap: {
+    marginBottom: 8,
     alignItems: 'center',
-    marginTop: 12,
   },
-  footerText: {
-    fontSize: 13,
+  footerBlock: {
+    fontSize: 14,
+    lineHeight: 22,
+    textAlign: 'center',
+    color: '#6B7280',
+    marginTop: 14,
+  },
+  footerMuted: {
     color: '#6B7280',
   },
   loginText: {
-    fontSize: 13,
     color: '#2563EB',
-    fontWeight: '700',
   },
 });
 

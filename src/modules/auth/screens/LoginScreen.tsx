@@ -1,12 +1,26 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import {
+  ActivityIndicator,
+  Alert,
   Pressable,
   StyleSheet,
   Text,
   View,
 } from 'react-native';
 import Svg, { Path } from 'react-native-svg';
+import { inter18 } from '../../../core/theme/typography';
+import {
+  clearRememberedEmail,
+  getRememberedEmail,
+  saveRememberedEmail,
+  saveToken,
+} from '../../../core/utils/storage';
 import MpscLogo from '../../../assets/images/mpsclogo.svg';
+import {
+  getAuthErrorMessage,
+  loginUser,
+  type LoginPayload,
+} from '../../../services/auth.service';
 import AuthBackground from '../components/AuthBackground';
 import AuthButton from '../components/AuthButton';
 import AuthInput from '../components/AuthInput';
@@ -45,14 +59,77 @@ type LoginScreenProps = {
   onGoToRegister: () => void;
 };
 
+const emptyForm: LoginPayload = {
+  email: '',
+  password: '',
+};
+
+function validateLoginForm(form: LoginPayload): string | null {
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email.trim())) {
+    return 'Please enter a valid email address.';
+  }
+  if (form.password.length < 6) {
+    return 'Password must be at least 6 characters.';
+  }
+  return null;
+}
+
 function LoginScreen({
   onContinueToApp,
   onForgotPassword,
   onGoToRegister,
 }: LoginScreenProps) {
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
   const [isPasswordHidden, setIsPasswordHidden] = useState(true);
-  const password = 'pass123';
-  const passwordValue = isPasswordHidden ? '*******' : password;
+  const [rememberMe, setRememberMe] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  useEffect(() => {
+    getRememberedEmail().then(savedEmail => {
+      if (savedEmail) {
+        setEmail(savedEmail);
+        setRememberMe(true);
+      }
+    });
+  }, []);
+
+  const handleLogin = async () => {
+    const payload: LoginPayload = {
+      email: email.trim().toLowerCase(),
+      password,
+    };
+
+    const validationError = validateLoginForm(payload);
+    if (validationError) {
+      Alert.alert('Validation', validationError);
+      return;
+    }
+
+    setIsSubmitting(true);
+    try {
+      const response = await loginUser(payload);
+
+      if (!response.token) {
+        Alert.alert('Error', 'Login succeeded but no token was returned.');
+        return;
+      }
+
+      await saveToken(response.token);
+
+      if (rememberMe) {
+        await saveRememberedEmail(payload.email);
+      } else {
+        await clearRememberedEmail();
+      }
+
+      onContinueToApp();
+    } catch (error) {
+      Alert.alert('Error', getAuthErrorMessage(error));
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
 
   return (
     <AuthBackground>
@@ -64,79 +141,117 @@ function LoginScreen({
         </View>
 
         <View style={styles.card}>
-          <Text style={styles.title}>Login</Text>
-          <Text style={styles.subtitle}>
+          <Text style={[styles.title, inter18('bold')]}>Login</Text>
+          <Text style={[styles.subtitle, inter18('regular')]}>
             Enter your email and password to log in
           </Text>
 
           <View style={styles.fieldGroup}>
-            <Text style={styles.label}>Email</Text>
+            <Text style={[styles.label, inter18('medium')]}>Email</Text>
             <AuthInput
               autoCapitalize="none"
               containerStyle={styles.inputField}
+              editable={!isSubmitting}
               keyboardType="email-address"
+              onChangeText={setEmail}
               placeholder="Enter your email"
+              value={email}
             />
           </View>
 
           <View style={styles.fieldGroup}>
-            <Text style={styles.label}>Password</Text>
+            <Text style={[styles.label, inter18('medium')]}>Password</Text>
             <AuthInput
               containerStyle={styles.inputField}
-              editable={isPasswordHidden ? false : true}
+              editable={!isSubmitting}
+              onChangeText={setPassword}
               placeholder="Enter your password"
               rightElement={
                 <MaterialIcon
                   color="#A3AAB8"
+                  disabled={isSubmitting}
                   name={isPasswordHidden ? 'visibility-off' : 'visibility'}
                   onPress={() => setIsPasswordHidden(value => !value)}
                   size={18}
                   style={styles.eyeIcon}
                 />
               }
-              style={styles.passwordInput}
-              value={isPasswordHidden ? '' : passwordValue}
+              secureTextEntry={isPasswordHidden}
+              style={[styles.passwordInput, inter18('regular')]}
+              value={password}
             />
           </View>
 
           <View style={styles.metaRow}>
-            <View style={styles.rememberRow}>
-              <View style={styles.checkbox} />
-              <Text style={styles.rememberText}>Remember me</Text>
-            </View>
+            <Pressable
+              accessibilityRole="checkbox"
+              accessibilityState={{ checked: rememberMe }}
+              disabled={isSubmitting}
+              onPress={() => setRememberMe(v => !v)}
+              style={styles.rememberRow}>
+              <View
+                style={[
+                  styles.checkbox,
+                  rememberMe ? styles.checkboxChecked : undefined,
+                ]}>
+                {rememberMe ? <Text style={styles.checkMark}>✓</Text> : null}
+              </View>
+              <Text style={[styles.rememberText, inter18('regular')]}>
+                Remember me
+              </Text>
+            </Pressable>
 
-            <Pressable onPress={onForgotPassword}>
-              <Text style={styles.forgotText}>Forgot Password ?</Text>
+            <Pressable disabled={isSubmitting} onPress={onForgotPassword}>
+              <Text style={[styles.forgotText, inter18('medium')]}>
+                Forgot Password ?
+              </Text>
             </Pressable>
           </View>
 
           <View style={styles.loginButtonWrap}>
-            <AuthButton label="Login" onPress={onContinueToApp} />
+            {isSubmitting ? (
+              <View style={styles.loadingWrap}>
+                <ActivityIndicator color="#802091" size="small" />
+              </View>
+            ) : null}
+            <AuthButton
+              disabled={isSubmitting}
+              label={isSubmitting ? 'Logging in...' : 'Login'}
+              onPress={handleLogin}
+            />
           </View>
 
-          <Text style={styles.orText}>Or login with</Text>
+          <View style={styles.orRow}>
+            <View style={styles.orLine} />
+            <Text style={[styles.orLabel, inter18('medium')]}>Or login with</Text>
+            <View style={styles.orLine} />
+          </View>
 
           <View style={styles.socialRow}>
-            <Pressable style={styles.socialButton}>
+            <Pressable disabled={isSubmitting} style={styles.socialButton}>
               <SocialIcon kind="google" />
             </Pressable>
-            <Pressable style={styles.socialButton}>
+            <Pressable disabled={isSubmitting} style={styles.socialButton}>
               <SocialIcon kind="facebook" />
             </Pressable>
-            <Pressable style={styles.socialButton}>
+            <Pressable disabled={isSubmitting} style={styles.socialButton}>
               <SocialIcon kind="apple" />
             </Pressable>
-            <Pressable style={styles.socialButton}>
+            <Pressable disabled={isSubmitting} style={styles.socialButton}>
               <MaterialIcon color="#111827" name="smartphone" size={18} />
             </Pressable>
           </View>
 
-          <View style={styles.footerRow}>
-            <Text style={styles.footerText}>Don't have an account?</Text>
-            <Pressable onPress={onGoToRegister}>
-              <Text style={styles.signUpText}> Sign Up</Text>
-            </Pressable>
-          </View>
+          <Text style={[styles.footerBlock, inter18('regular')]}>
+            <Text style={styles.footerMuted}>
+              {"Don't have an account? "}
+            </Text>
+            <Text
+              onPress={isSubmitting ? undefined : onGoToRegister}
+              style={[styles.signUpText, inter18('bold')]}>
+              Sign Up
+            </Text>
+          </Text>
         </View>
       </View>
     </AuthBackground>
@@ -172,44 +287,48 @@ const styles = StyleSheet.create({
     elevation: 8,
   },
   card: {
-    backgroundColor: '#FFFFFFE6',
-    borderRadius: 10,
-    paddingHorizontal: 14,
-    paddingTop: 34,
-    paddingBottom: 30,
+    backgroundColor: '#FFFFFF',
+    borderRadius: 28,
+    paddingHorizontal: 22,
+    paddingTop: 32,
+    paddingBottom: 28,
     minHeight: 275,
+    shadowColor: '#64748B',
+    shadowOpacity: 0.12,
+    shadowRadius: 24,
+    shadowOffset: {
+      width: 0,
+      height: 12,
+    },
+    elevation: 6,
   },
   title: {
-    fontSize: 24,
-    fontWeight: '700',
+    fontSize: 26,
     textAlign: 'center',
-    color: '#111827',
-    marginBottom: 4,
+    color: '#0B1B3A',
+    marginBottom: 6,
   },
   subtitle: {
     fontSize: 14,
-    lineHeight: 16,
+    lineHeight: 20,
     textAlign: 'center',
     color: '#6B7280',
-    marginBottom: 16,
+    marginBottom: 22,
   },
   fieldGroup: {
-    marginBottom: 10,
+    marginBottom: 12,
   },
   inputField: {
     marginTop: 2,
   },
   label: {
     fontSize: 13,
-    fontWeight: '500',
     color: '#6B7280',
     marginBottom: 6,
   },
   passwordInput: {
     fontSize: 14,
     color: '#111827',
-    fontWeight: '700',
-    letterSpacing: 1,
   },
   eyeIcon: {
     marginLeft: 8,
@@ -218,21 +337,33 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    marginTop: 20,
-    marginBottom: 14,
+    marginTop: 18,
+    marginBottom: 8,
   },
   rememberRow: {
     flexDirection: 'row',
     alignItems: 'center',
   },
   checkbox: {
-    width: 12,
-    height: 12,
-    borderWidth: 1,
+    width: 18,
+    height: 18,
+    borderWidth: 1.5,
     borderColor: '#9CA3AF',
-    borderRadius: 2,
-    marginRight: 6,
+    borderRadius: 4,
+    marginRight: 8,
     backgroundColor: '#FFFFFF',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  checkboxChecked: {
+    borderColor: '#802091',
+    backgroundColor: '#F3E8FF',
+  },
+  checkMark: {
+    fontSize: 11,
+    color: '#802091',
+    fontWeight: '700',
+    marginTop: -1,
   },
   rememberText: {
     fontSize: 13,
@@ -240,47 +371,59 @@ const styles = StyleSheet.create({
   },
   forgotText: {
     fontSize: 13,
-    color: '#4F46E5',
-    fontWeight: '500',
+    color: '#2563EB',
   },
   loginButtonWrap: {
-    marginTop: 20,
+    marginTop: 22,
   },
-  orText: {
+  loadingWrap: {
+    marginBottom: 8,
+    alignItems: 'center',
+  },
+  orRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginTop: 22,
+    marginBottom: 18,
+  },
+  orLine: {
+    flex: 1,
+    height: StyleSheet.hairlineWidth,
+    backgroundColor: '#E5E7EB',
+  },
+  orLabel: {
+    marginHorizontal: 14,
     fontSize: 13,
-    color: '#6B7280',
-    textAlign: 'center',
-    marginTop: 12,
-    marginBottom: 12,
+    color: '#9CA3AF',
   },
   socialRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    marginBottom: 16,
+    gap: 10,
+    marginBottom: 22,
   },
   socialButton: {
-    width: 45,
-    height: 36,
-    borderRadius: 6,
+    flex: 1,
+    height: 48,
+    maxWidth: 76,
+    borderRadius: 12,
     backgroundColor: '#FFFFFF',
     alignItems: 'center',
     justifyContent: 'center',
     borderWidth: 1,
-    borderColor: '#F1F5F9',
+    borderColor: '#E8EDF3',
   },
-  footerRow: {
-    flexDirection: 'row',
-    justifyContent: 'center',
-    alignItems: 'center',
+  footerBlock: {
+    fontSize: 14,
+    lineHeight: 20,
+    textAlign: 'center',
+    color: '#6B7280',
   },
-  footerText: {
-    fontSize: 13,
+  footerMuted: {
     color: '#6B7280',
   },
   signUpText: {
-    fontSize: 13,
     color: '#2563EB',
-    fontWeight: '700',
   },
 });
 

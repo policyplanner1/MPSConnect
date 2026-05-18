@@ -29,6 +29,8 @@ import BottomMoreIcon from '../../../assets/images/icons/bizz_logo.svg';
 
 type HomeScreenProps = {
   onGetStarted?: () => void;
+  onOpenNotifications?: () => void;
+  onOpenRewards?: () => void;
   onLogout?: () => void;
   onServicePress?: (serviceId: number) => void;
   onGovernmentDocuments?: () => void;
@@ -205,7 +207,8 @@ function BottomTab({
   );
 }
 
-function HomeScreen({ onGetStarted, onServicePress, onGovernmentDocuments, onInsurancePress }: HomeScreenProps) {
+function HomeScreen({ onGetStarted, onServicePress, onGovernmentDocuments, onInsurancePress,onOpenNotifications,
+  onOpenRewards }: HomeScreenProps) {
   const { services: govServices, loading: govLoading } = useGovernmentServices();
 
   return (
@@ -225,14 +228,18 @@ function HomeScreen({ onGetStarted, onServicePress, onGovernmentDocuments, onIns
                 <Text style={styles.avatarText}>AJ</Text>
               </View>
 
-              <View style={styles.notifyWrap}>
+              <Pressable
+                accessibilityLabel="Open notifications"
+                hitSlop={8}
+                onPress={onOpenNotifications}
+                style={styles.notifyWrap}>
                 <View style={styles.notifyBubble}>
                   <Icon kind="bell" color="#111827" size={17} />
                 </View>
                 <View style={styles.notifyDot}>
                   <Text style={styles.notifyCount}>1</Text>
                 </View>
-              </View>
+              </Pressable>
             </View>
           </View>
 
@@ -282,14 +289,17 @@ function HomeScreen({ onGetStarted, onServicePress, onGovernmentDocuments, onIns
             </SectionCard>
 
             <SectionCard compact>
-              <View style={styles.rewardRow}>
+              <Pressable
+                accessibilityLabel="Open rewards"
+                onPress={onOpenRewards}
+                style={styles.rewardRow}>
                 <Text style={styles.rewardStar}>⭐</Text>
                 <View style={styles.rewardTextWrap}>
                   <Text style={styles.rewardTitle}>Rewards</Text>
                   <Text style={styles.rewardPoints}>1250 Points</Text>
                 </View>
                 <Icon kind="chevron" color="#111111" size={24} />
-              </View>
+              </Pressable>
             </SectionCard>
 
             <SectionCard title="Government Documents" rightChevron onHeaderPress={onGovernmentDocuments}>
