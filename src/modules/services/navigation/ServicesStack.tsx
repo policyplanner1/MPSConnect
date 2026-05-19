@@ -3,6 +3,7 @@ import React, { useState } from 'react';
 import ChatbotStack from '../../chatbot/navigation/ChatbotStack';
 import HealthInsuranceStack from '../../healthInsurance/navigation/HealthInsuranceStack';
 import OtherInsuranceStack from '../../otherInsurance/navigation/OtherInsuranceStack';
+import SuperTopUpStack from '../../superTopUp/navigation/SuperTopUpStack';
 import NotificationScreen from '../../notifications/screens/NotificationScreen';
 import RefereAndEarn from '../../rewards/screens/RefereAndEarn';
 import RewardsHistoryScreen from '../../rewards/screens/RewardsHistoryScreen';
@@ -12,6 +13,7 @@ import ServiceListScreen from '../screens/ServiceListScreen';
 import { Service } from '../types/service.types';
 
 const HEALTH_INSURANCE_ID = 12;
+const SUPER_TOP_UP_ID = 18;
 
 type ScreenState =
   | { name: 'Home' }
@@ -22,6 +24,7 @@ type ScreenState =
   | { name: 'ServiceList'; categoryId: number }
   | { name: 'ServiceDetail'; serviceId: number; fromCategoryId?: number }
   | { name: 'HealthInsurance' }
+  | { name: 'SuperTopUp' }
   | { name: 'OtherInsurance'; serviceId: number; service: Service };
 
 type ServicesStackProps = {
@@ -62,6 +65,14 @@ function ServicesStack({ onLogout }: ServicesStackProps) {
     );
   }
 
+  if (screen.name === 'SuperTopUp') {
+    return (
+      <SuperTopUpStack
+        onBack={() => setScreen({ name: 'ServiceList', categoryId: 2 })}
+      />
+    );
+  }
+
   if (screen.name === 'OtherInsurance') {
     return (
       <OtherInsuranceStack
@@ -82,6 +93,8 @@ function ServicesStack({ onLogout }: ServicesStackProps) {
           if (categoryId === 2) {
             if (serviceId === HEALTH_INSURANCE_ID) {
               setScreen({ name: 'HealthInsurance' });
+            } else if (serviceId === SUPER_TOP_UP_ID) {
+              setScreen({ name: 'SuperTopUp' });
             } else {
               setScreen({ name: 'OtherInsurance', serviceId, service });
             }
@@ -117,6 +130,7 @@ function ServicesStack({ onLogout }: ServicesStackProps) {
         setScreen({ name: 'ServiceList', categoryId: 3 })
       }
       onInsurancePress={() => setScreen({ name: 'ServiceList', categoryId: 2 })}
+      onTaxServicesPress={() => setScreen({ name: 'ServiceList', categoryId: 1 })}
       onOpenNotifications={() => setScreen({ name: 'Notifications' })}
       onOpenRewards={() => setScreen({ name: 'RewardHistory' })}
       onServicePress={serviceId =>

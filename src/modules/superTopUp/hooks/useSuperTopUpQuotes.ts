@@ -1,11 +1,11 @@
 import { useEffect, useState } from 'react';
 
-import { EnquiryFormData } from '../navigation/HealthInsuranceStack';
+import { SuperTopUpFormData } from '../navigation/SuperTopUpStack';
 
-const CITY_ZONES: Record<string, number> = require('../data/cityZones.json');
+const CITY_ZONES: Record<string, number> = require('../../healthInsurance/data/cityZones.json');
 
 const PLANS_LIST_URL =
-  'https://policyplanner.com/health-insurance/companies/plans?policy=health';
+  'https://policyplanner.com/health-insurance//companies/plans?policy=super_top_up';
 
 const LOGO_BASE = 'https://policyplanner.com/assets/logos/';
 
@@ -33,41 +33,42 @@ const COVER_MAP: Record<string, number> = {
 
 export type PlanFeature = {
   id: number;
+  company_id: string;
+  plan_id: string;
   includes: string | null;
   excludes: string | null;
   addons: string | null;
 };
 
-export type QuotePlan = {
+export type PremiumTier = {
+  premium: number;
+  deductible: string;
+};
+
+export type SuperTopUpPlan = {
   companyId: string;
   planId: string;
+  companyName: string;
+  logoUrl: string;
+  brochureUrl: string;
+  onePagerUrl: string;
   planName: string;
   coverAmount: number;
-  totalPayablePremium: number;
-  totalDiscount: number;
-  noOfAdults: number;
-  noOfChildren: number;
-  company: {
-    company_id: number;
-    company_name: string;
-    logo: string;
-  };
-  plan: {
-    plan_name: string;
-    broucher: string;
-    onePager: string;
-    api_type: string;
-  };
+  adults: number;
+  children: number;
+  eldestActual: number;
+  eldestLookup: number;
+  premiums: PremiumTier[];
+  members: { label: string; age: number }[];
+  otherDetails: string;
   features: PlanFeature[];
 };
 
-function buildPayload(formData: EnquiryFormData): Record<string, number | string | null> {
-  const coverAmount = COVER_MAP[formData.coverAmount] ?? 500000;
+function buildPayload(formData: SuperTopUpFormData): Record<string, number | null> {
+  const coverAmount = COVER_MAP[formData.coverAmount] ?? 1000000;
   const childAges = formData.childrenAges.map(a => (Number(a) > 0 ? Number(a) : null));
-  const zone = String(CITY_ZONES[formData.city.trim().toLowerCase()] ?? 3);
   return {
     coverAmount,
-    zone,
     age: formData.includeSelf && formData.selfAge ? Number(formData.selfAge) : null,
     sage: formData.includeSpouse && formData.spouseAge ? Number(formData.spouseAge) : null,
     c1age: childAges[0] ?? null,
@@ -77,12 +78,12 @@ function buildPayload(formData: EnquiryFormData): Record<string, number | string
   };
 }
 
-export function getLogoUri(logo: string): string {
-  return `${LOGO_BASE}${logo}`;
+export function getLogoUri(logoUrl: string): string {
+  return `${LOGO_BASE}${logoUrl}`;
 }
 
-export function useHealthQuotes(formData: EnquiryFormData) {
-  const [plans, setPlans] = useState<QuotePlan[]>([]);
+export function useSuperTopUpQuotes(formData: SuperTopUpFormData) {
+  const [plans, setPlans] = useState<SuperTopUpPlan[]>([]);
   const [loading, setLoading] = useState(true);
   const [loadedCount, setLoadedCount] = useState(0);
   const [totalCount, setTotalCount] = useState(0);
@@ -111,7 +112,7 @@ export function useHealthQuotes(formData: EnquiryFormData) {
         if (!cancelled) setTotalCount(apiUrls.length);
 
         const payload = buildPayload(formData);
-        console.log('[Health] Payload:', JSON.stringify(payload, null, 2));
+        console.log('[SuperTopUp] Payload:', JSON.stringify(payload, null, 2));
 
         await Promise.allSettled(
           apiUrls.map(url =>
@@ -121,16 +122,16 @@ export function useHealthQuotes(formData: EnquiryFormData) {
               body: JSON.stringify(payload),
             })
               .then(r => r.json())
-              .then((data: QuotePlan) => {
-                console.log('[Health] Response from', url, ':', JSON.stringify(data, null, 2));
+              .then((data: SuperTopUpPlan) => {
+                console.log('[SuperTopUp] Response from', url, ':', JSON.stringify(data, null, 2));
                 if (cancelled) return;
-                if (data?.totalPayablePremium && data.company) {
+                if (data?.premiums?.length > 0 && data.companyName) {
                   setPlans(prev => [...prev, data]);
                 }
                 setLoadedCount(prev => prev + 1);
               })
               .catch(err => {
-                console.log('[Health] Error from', url, ':', err);
+                console.log('[SuperTopUp] Error from', url, ':', err);
                 if (!cancelled) setLoadedCount(prev => prev + 1);
               }),
           ),

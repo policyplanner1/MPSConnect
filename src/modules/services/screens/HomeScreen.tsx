@@ -35,6 +35,7 @@ type HomeScreenProps = {
   onServicePress?: (serviceId: number) => void;
   onGovernmentDocuments?: () => void;
   onInsurancePress?: () => void;
+  onTaxServicesPress?: () => void;
 };
 
 type SvgIconType = React.FC<SvgProps>;
@@ -207,7 +208,7 @@ function BottomTab({
   );
 }
 
-function HomeScreen({ onGetStarted, onServicePress, onGovernmentDocuments, onInsurancePress,onOpenNotifications,
+function HomeScreen({ onGetStarted, onServicePress, onGovernmentDocuments, onInsurancePress, onTaxServicesPress, onOpenNotifications,
   onOpenRewards }: HomeScreenProps) {
   const { services: govServices, loading: govLoading } = useGovernmentServices();
 
@@ -326,7 +327,7 @@ function HomeScreen({ onGetStarted, onServicePress, onGovernmentDocuments, onIns
 
             <View style={styles.smallRow}>
               <SmallCategory IconComponent={InsuranceCardIcon} label="Insurance" onPress={onInsurancePress} />
-              <SmallCategory IconComponent={TaxCardIcon} label="Tax Services" />
+              <SmallCategory IconComponent={TaxCardIcon} label="Tax Services" onPress={onTaxServicesPress} />
               <SmallCategory IconComponent={MutualFundCardIcon} label="Mutual Funds" />
             </View>
           </ScrollView>

@@ -108,20 +108,20 @@ function LoginScreen({
 
     setIsSubmitting(true);
     try {
-      const response = await loginUser(payload);
+      // const response = await loginUser(payload);
 
-      if (!response.token) {
-        Alert.alert('Error', 'Login succeeded but no token was returned.');
-        return;
-      }
+      // if (!response.token) {
+      //   Alert.alert('Error', 'Login succeeded but no token was returned.');
+      //   return;
+      // }
 
-      await saveToken(response.token);
+      // await saveToken(response.token);
 
-      if (rememberMe) {
-        await saveRememberedEmail(payload.email);
-      } else {
-        await clearRememberedEmail();
-      }
+      // if (rememberMe) {
+      //   await saveRememberedEmail(payload.email);
+      // } else {
+      //   await clearRememberedEmail();
+      // }
 
       onContinueToApp();
     } catch (error) {

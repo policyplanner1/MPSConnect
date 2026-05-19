@@ -14,9 +14,7 @@ import Svg, { Path } from 'react-native-svg';
 import { EnquiryFormData } from '../navigation/HealthInsuranceStack';
 import { QuotePlan, getLogoUri, useHealthQuotes } from '../hooks/useHealthQuotes';
 
-type SortKey = 'Premium' | 'Coverage';
-
-const SORT_OPTIONS: SortKey[] = ['Premium', 'Coverage'];
+type SortKey = 'asc' | 'desc';
 
 const COMPANY_COLORS = [
   '#FF6B35', '#0057A8', '#00A86B', '#7C3AED',
@@ -216,12 +214,15 @@ function SkeletonCard() {
 
 function QuoteScreen({ formData, onBack }: Props) {
   const { plans, loading, loadedCount, totalCount, error } = useHealthQuotes(formData);
-  const [sortBy, setSortBy] = useState<SortKey>('Premium');
+  const [sortBy, setSortBy] = useState<SortKey>('asc');
 
   const sortedPlans = useMemo(() => {
     const copy = [...plans];
-    if (sortBy === 'Premium') copy.sort((a, b) => a.totalPayablePremium - b.totalPayablePremium);
-    if (sortBy === 'Coverage') copy.sort((a, b) => b.coverAmount - a.coverAmount);
+    copy.sort((a, b) =>
+      sortBy === 'asc'
+        ? a.totalPayablePremium - b.totalPayablePremium
+        : b.totalPayablePremium - a.totalPayablePremium,
+    );
     return copy;
   }, [plans, sortBy]);
 
@@ -272,18 +273,13 @@ function QuoteScreen({ formData, onBack }: Props) {
                 ? `${plans.length} plans found so far…`
                 : `${plans.length} plans found for you`}
             </Text>
-            <View style={styles.sortChips}>
-              {SORT_OPTIONS.map(opt => (
-                <Pressable
-                  key={opt}
-                  onPress={() => setSortBy(opt)}
-                  style={[styles.sortChip, sortBy === opt && styles.sortChipActive]}>
-                  <Text style={[styles.sortChipText, sortBy === opt && styles.sortChipTextActive]}>
-                    {opt}
-                  </Text>
-                </Pressable>
-              ))}
-            </View>
+            <Pressable
+              onPress={() => setSortBy(s => s === 'asc' ? 'desc' : 'asc')}
+              style={styles.sortChip}>
+              <Text style={styles.sortChipText}>
+                Premium {sortBy === 'asc' ? '↑ Low–High' : '↓ High–Low'}
+              </Text>
+            </Pressable>
           </View>
         )}
 
@@ -403,18 +399,15 @@ const styles = StyleSheet.create({
     paddingVertical: 12,
   },
   resultCount: { fontSize: 13, color: '#666666', flex: 1 },
-  sortChips: { flexDirection: 'row', gap: 8 },
   sortChip: {
     paddingHorizontal: 12,
     paddingVertical: 6,
     borderRadius: 16,
     borderWidth: 1,
-    borderColor: '#D1D5DB',
-    backgroundColor: '#FFFFFF',
+    borderColor: '#6B21A8',
+    backgroundColor: '#F3E8FF',
   },
-  sortChipActive: { borderColor: '#6B21A8', backgroundColor: '#F3E8FF' },
-  sortChipText: { fontSize: 12, color: '#374151' },
-  sortChipTextActive: { color: '#6B21A8', fontWeight: '700' },
+  sortChipText: { fontSize: 12, color: '#6B21A8', fontWeight: '700' },
 
   planCard: {
     backgroundColor: '#FFFFFF',
