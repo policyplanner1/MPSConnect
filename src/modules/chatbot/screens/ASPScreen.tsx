@@ -1,50 +1,118 @@
-import React from 'react';
-import {
-  StyleProp,
-  StyleSheet,
-  Text,
-  TextStyle,
-  View,
-} from 'react-native';
+import React, { useEffect, useMemo, useState } from 'react';
+import { ActivityIndicator, StyleSheet, Text, View } from 'react-native';
 
 import ChatbotBackground from '../components/ChatbotBackground';
 import ChatbotButton from '../components/ChatbotButton';
 import ChatbotCard from '../components/ChatbotCard';
 import {
+  sendSupportChatMessage,
+  type SupportChatResponse,
+} from '../api/supportChatApi';
+import {
   CHATBOT_RESPONSE_MAP,
   DEFAULT_CHATBOT_RESPONSE,
 } from '../data/chatbotResponses';
+import type { ChatbotResponseContent } from '../types/chatbot.types';
+import { chatbotType } from '../theme/chatbotTypography';
+import { renderBotParagraphs } from '../utils/renderBotText';
 
 type ASPScreenProps = {
   onActionPress?: (actionId: string, responseKey?: string) => void;
   onBack?: () => void;
+  onCreateTicket?: () => void;
   responseKey?: string;
 };
 
-function renderParagraphs(
-  text: string,
-  textStyle: StyleProp<TextStyle>,
-  paragraphSpacingStyle?: StyleProp<TextStyle>,
-) {
-  return text
-    .split(/\n\s*\n/)
-    .map(paragraph => paragraph.trim())
-    .filter(Boolean)
-    .map((paragraph, index) => (
-      <Text
-        key={`${paragraph}-${index}`}
-        style={[textStyle, index > 0 ? paragraphSpacingStyle : null]}>
-        {paragraph}
-      </Text>
-    ));
+function formatTimeLabel(date = new Date()) {
+  return date.toLocaleTimeString(undefined, {
+    hour: 'numeric',
+    minute: '2-digit',
+  });
+}
+
+function mapApiToContent(
+  apiResponse: SupportChatResponse,
+  fallback: ChatbotResponseContent,
+): ChatbotResponseContent {
+  return {
+    prompt: apiResponse.prompt || fallback.prompt,
+    answerPrimary: apiResponse.answerPrimary || fallback.answerPrimary,
+    answerSecondary: apiResponse.answerSecondary || fallback.answerSecondary,
+    actions: apiResponse.actions?.length ? apiResponse.actions : fallback.actions,
+  };
 }
 
 function ASPScreen({
   onActionPress,
   onBack,
+  onCreateTicket,
   responseKey = 'application_stuck_in_processing',
 }: ASPScreenProps) {
-  const response = CHATBOT_RESPONSE_MAP[responseKey] ?? DEFAULT_CHATBOT_RESPONSE;
+  const fallbackResponse = useMemo(
+    () => CHATBOT_RESPONSE_MAP[responseKey] ?? DEFAULT_CHATBOT_RESPONSE,
+    [responseKey],
+  );
+  const [loading, setLoading] = useState(true);
+  const [response, setResponse] = useState<ChatbotResponseContent>(fallbackResponse);
+  const [timeLabel] = useState(() => formatTimeLabel());
+
+  useEffect(() => {
+    let cancelled = false;
+
+    async function loadResponse() {
+      setLoading(true);
+      setResponse(fallbackResponse);
+
+      try {
+        const apiResponse = await sendSupportChatMessage(
+          fallbackResponse.prompt,
+          responseKey,
+        );
+
+        if (cancelled) {
+          return;
+        }
+
+        setResponse(mapApiToContent(apiResponse, fallbackResponse));
+      } catch (error) {
+        if (__DEV__) {
+          // eslint-disable-next-line no-console
+          console.warn('[Support chat] API failed, using static fallback:', error);
+        }
+        if (!cancelled) {
+          setResponse(fallbackResponse);
+        }
+      } finally {
+        if (!cancelled) {
+          setLoading(false);
+        }
+      }
+    }
+
+    void loadResponse();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [fallbackResponse, responseKey]);
+
+  const displayResponse = useMemo(() => response, [response]);
+
+  const botActions = useMemo(
+    () =>
+      displayResponse.actions.filter(
+        action => action.id !== 'contact_support',
+      ),
+    [displayResponse.actions],
+  );
+
+  const handleActionPress = (actionId: string) => {
+    if (actionId === 'contact_support') {
+      onCreateTicket?.();
+      return;
+    }
+    onActionPress?.(actionId, responseKey);
+  };
 
   return (
     <ChatbotBackground
@@ -53,40 +121,62 @@ function ASPScreen({
       <View style={styles.innerContent}>
         <View style={styles.userMessageWrap}>
           <View style={styles.userMessageBubble}>
-            <Text style={styles.userMessageText}>{response.prompt}</Text>
+            <Text style={styles.userMessageText}>{displayResponse.prompt}</Text>
           </View>
-          <Text style={styles.userMessageTime}>11.14 AM</Text>
+          <Text style={styles.userMessageTime}>{timeLabel}</Text>
         </View>
 
         <View style={styles.botSection}>
           <View style={styles.botDot} />
 
           <View style={styles.botContent}>
-            <ChatbotCard contentStyle={styles.cardContent} style={styles.card}>
-              {renderParagraphs(response.answerPrimary, styles.cardText, styles.cardTextParagraph)}
+            {loading ? (
+              <View style={styles.loadingCard}>
+                <ActivityIndicator color="#FFFFFF" />
+                <Text style={styles.loadingText}>Checking your account…</Text>
+              </View>
+            ) : (
+              <ChatbotCard contentStyle={styles.cardContent} style={styles.card}>
+                {renderBotParagraphs(displayResponse.answerPrimary, {
+                  paragraphSpacingStyle: styles.cardTextParagraph,
+                })}
 
-              {response.answerSecondary ? (
-                renderParagraphs(
-                  response.answerSecondary,
-                  styles.cardTextBottom,
-                  styles.cardTextParagraph,
-                )
-              ) : null}
-            </ChatbotCard>
+                {displayResponse.answerSecondary
+                  ? renderBotParagraphs(displayResponse.answerSecondary, {
+                      baseStyle: styles.cardTextBottom,
+                      paragraphSpacingStyle: styles.cardTextParagraph,
+                    })
+                  : null}
+              </ChatbotCard>
+            )}
 
-            {response.actions.map((action, index) => (
-              <ChatbotButton
-                key={action.id}
-                label={action.label}
-                onPress={() => onActionPress?.(action.id, responseKey)}
-                style={index === 0 ? styles.primaryButton : styles.secondaryButton}
-                textStyle={styles.buttonText}
-              />
-            ))}
+            {!loading ? (
+              <>
+                {botActions.map((action, index) => (
+                  <ChatbotButton
+                    key={action.id}
+                    label={action.label}
+                    onPress={() => handleActionPress(action.id)}
+                    style={index === 0 ? styles.primaryButton : styles.secondaryButton}
+                  />
+                ))}
+
+                {onCreateTicket ? (
+                  <ChatbotButton
+                    label="Create support ticket"
+                    onPress={onCreateTicket}
+                    style={[
+                      botActions.length === 0 ? styles.primaryButton : styles.secondaryButton,
+                      styles.createTicketButton,
+                    ]}
+                  />
+                ) : null}
+              </>
+            ) : null}
           </View>
         </View>
 
-        <Text style={styles.sectionTime}>11.14 AM</Text>
+        <Text style={styles.sectionTime}>{timeLabel}</Text>
       </View>
     </ChatbotBackground>
   );
@@ -118,16 +208,11 @@ const styles = StyleSheet.create({
     paddingVertical: 10,
   },
   userMessageText: {
-    fontSize: 13,
-    lineHeight: 18,
-    fontWeight: '400',
-    color: '#4A4A4A',
+    ...chatbotType.userMessage,
   },
   userMessageTime: {
+    ...chatbotType.timestamp,
     marginTop: 5,
-    fontSize: 11,
-    lineHeight: 14,
-    color: '#B0B0B0',
     marginRight: 4,
   },
   botSection: {
@@ -150,6 +235,19 @@ const styles = StyleSheet.create({
     width: '70%',
     maxWidth: '70%',
   },
+  loadingCard: {
+    minHeight: 120,
+    borderRadius: 8,
+    backgroundColor: '#6C4DFF',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 10,
+    paddingHorizontal: 16,
+    paddingVertical: 20,
+  },
+  loadingText: {
+    ...chatbotType.botLoading,
+  },
   card: {
     borderRadius: 8,
   },
@@ -159,18 +257,9 @@ const styles = StyleSheet.create({
     paddingTop: 16,
     paddingBottom: 14,
   },
-  cardText: {
-    fontSize: 13,
-    lineHeight: 27,
-    color: '#FFFFFF',
-    fontWeight: '400',
-  },
   cardTextBottom: {
-    marginTop: 26,
-    fontSize: 13,
-    lineHeight: 27,
-    color: '#FFFFFF',
-    fontWeight: '400',
+    ...chatbotType.botBody,
+    marginTop: 20,
   },
   cardTextParagraph: {
     marginTop: 12,
@@ -191,18 +280,13 @@ const styles = StyleSheet.create({
     paddingHorizontal: 18,
     paddingVertical: 8,
   },
-  buttonText: {
-    fontSize: 14,
-    lineHeight: 22,
-    color: '#5A5A5A',
-    fontWeight: '400',
+  createTicketButton: {
+    marginTop: 14,
   },
   sectionTime: {
+    ...chatbotType.timestamp,
     marginTop: 8,
     marginLeft: 18,
-    fontSize: 11,
-    lineHeight: 14,
-    color: '#B0B0B0',
   },
 });
 

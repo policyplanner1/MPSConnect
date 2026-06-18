@@ -1,8 +1,15 @@
 require("dotenv").config();
 
 require("./config/supertokens");
+const { initFirebaseAdmin } = require("./config/firebase");
+const {
+  startOrderStatusPolling,
+} = require("./services/orderStatusMonitor.service");
+
+initFirebaseAdmin();
 
 const express = require("express");
+const path = require("path");
 
 const cors = require("cors");
 
@@ -26,6 +33,13 @@ app.use(
     ],
     credentials: true,
   })
+);
+
+app.use(
+  '/uploads',
+  express.static(
+    path.join(__dirname, '../uploads'),
+  ),
 );
 
 app.use(cookieParser());
@@ -62,6 +76,18 @@ app.get("/api/v1/profile", protect, (req, res) => {
   });
 });
 
+// Banners
+const bannerRoutes = require("./modules/banners/banner.routes");
+app.use("/api/banners", bannerRoutes);
+
+// Notifications
+const notificationRoutes = require("./modules/notifications/notifications.routes");
+app.use("/api/v1/notifications", notificationRoutes);
+
+// Hybrid support chatbot
+const supportRoutes = require("./modules/support/support.routes");
+app.use("/api/v1/support", supportRoutes);
+
 app.use(errorHandler());
 
 const PORT = process.env.PORT || 5000;
@@ -71,4 +97,6 @@ app.listen(PORT, HOST, () => {
   console.log(`Server running at http://${HOST}:${PORT}`);
   console.log(`Auth signup:  POST http://localhost:${PORT}/api/v1/auth/signup`);
   console.log(`Forgot password: POST http://localhost:${PORT}/api/v1/auth/forgot-password`);
+  console.log(`FCM token:     POST http://localhost:${PORT}/api/v1/notifications/fcm-token`);
+  startOrderStatusPolling();
 });

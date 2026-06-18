@@ -12,6 +12,8 @@ import Svg, { Path } from 'react-native-svg';
 
 import { Service } from '../../services/types/service.types';
 
+import { inter18 } from '../../../core/theme/typography';
+
 type Props = {
   service: Service;
   onBack: () => void;
@@ -157,7 +159,7 @@ const styles = StyleSheet.create({
     flex: 1,
     textAlign: 'center',
     fontSize: 16,
-    fontWeight: '700',
+    ...inter18('bold'),
     color: '#14532D',
     paddingHorizontal: 8,
   },
@@ -173,7 +175,7 @@ const styles = StyleSheet.create({
   heroImg: { width: 130, height: 130, marginBottom: 14 },
   heroName: {
     fontSize: 22,
-    fontWeight: '800',
+    ...inter18('bold'),
     color: '#14532D',
     textAlign: 'center',
     marginBottom: 8,
@@ -192,7 +194,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 14,
     paddingVertical: 7,
   },
-  priceTagText: { color: '#FFFFFF', fontWeight: '700', fontSize: 13 },
+  priceTagText: { color: '#FFFFFF', fontSize: 13, ...inter18('bold') },
   dayTag: {
     backgroundColor: 'rgba(255,255,255,0.6)',
     borderRadius: 20,
@@ -201,7 +203,7 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: 'rgba(255,255,255,0.9)',
   },
-  dayTagText: { color: '#14532D', fontWeight: '600', fontSize: 13 },
+  dayTagText: { color: '#14532D', fontSize: 13, ...inter18('semiBold') },
 
   ctaWrap: {
     backgroundColor: '#FFFFFF',
@@ -213,7 +215,7 @@ const styles = StyleSheet.create({
     paddingVertical: 15,
     alignItems: 'center',
   },
-  enquiryBtnText: { color: '#FFFFFF', fontWeight: '700', fontSize: 15 },
+  enquiryBtnText: { color: '#FFFFFF', fontSize: 15, ...inter18('bold') },
   pressed: { opacity: 0.82 },
 
   section: {
@@ -224,7 +226,7 @@ const styles = StyleSheet.create({
   },
   sectionTitle: {
     fontSize: 16,
-    fontWeight: '700',
+    ...inter18('bold'),
     color: '#111111',
     marginBottom: 14,
   },
@@ -256,9 +258,9 @@ const styles = StyleSheet.create({
     marginRight: 12,
     flexShrink: 0,
   },
-  stepNum: { fontSize: 14, fontWeight: '800', color: '#6B21A8' },
+  stepNum: { fontSize: 14, color: '#6B21A8', ...inter18('bold') },
   stepInfo: { flex: 1 },
-  stepTitle: { fontSize: 14, fontWeight: '700', color: '#111111', marginBottom: 3 },
+  stepTitle: { fontSize: 14, color: '#111111', marginBottom: 3, ...inter18('bold') },
   stepDesc: { fontSize: 13, color: '#666666' },
 
   bottomCta: {
@@ -269,7 +271,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginBottom: 32,
   },
-  bottomCtaText: { color: '#FFFFFF', fontWeight: '700', fontSize: 15 },
+  bottomCtaText: { color: '#FFFFFF', fontSize: 15, ...inter18('bold') },
 });
 
 export default OtherInsuranceLandingScreen;

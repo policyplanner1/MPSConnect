@@ -11,6 +11,8 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Svg, { Path } from 'react-native-svg';
 
+import { inter18 } from '../../../core/theme/typography';
+
 import { EnquiryFormData } from '../navigation/HealthInsuranceStack';
 import { QuotePlan, getLogoUri, useHealthQuotes } from '../hooks/useHealthQuotes';
 
@@ -353,7 +355,7 @@ const styles = StyleSheet.create({
     flex: 1,
     textAlign: 'center',
     fontSize: 17,
-    fontWeight: '700',
+    ...inter18('bold'),
     color: '#14532D',
   },
   headerSpacer: { width: 34 },
@@ -369,7 +371,7 @@ const styles = StyleSheet.create({
     borderBottomColor: '#F3F4F6',
   },
   summaryText: { fontSize: 13, color: '#374151', flex: 1, marginRight: 12 },
-  editText: { fontSize: 13, fontWeight: '700', color: '#6B21A8' },
+  editText: { fontSize: 13, color: '#6B21A8', ...inter18('bold') },
 
   loadingBarWrap: {
     backgroundColor: '#FFFFFF',
@@ -414,7 +416,7 @@ const styles = StyleSheet.create({
   },
   sortChipActive: { borderColor: '#6B21A8', backgroundColor: '#F3E8FF' },
   sortChipText: { fontSize: 12, color: '#374151' },
-  sortChipTextActive: { color: '#6B21A8', fontWeight: '700' },
+  sortChipTextActive: { color: '#6B21A8', ...inter18('bold') },
 
   planCard: {
     backgroundColor: '#FFFFFF',
@@ -457,18 +459,18 @@ const styles = StyleSheet.create({
   },
   planInitialsFallback: {
     fontSize: 15,
-    fontWeight: '800',
+    ...inter18('bold'),
   },
   planInfo: { flex: 1, marginRight: 8 },
-  planName: { fontSize: 14, fontWeight: '700', color: '#111111', marginBottom: 3 },
+  planName: { fontSize: 14, color: '#111111', marginBottom: 3, ...inter18('bold') },
   planCompany: { fontSize: 12, color: '#666666' },
   planPriceWrap: { alignItems: 'flex-end' },
-  planPremium: { fontSize: 16, fontWeight: '800', color: '#14532D' },
+  planPremium: { fontSize: 16, color: '#14532D', ...inter18('bold') },
   planCover: { fontSize: 11, color: '#666666', marginTop: 2 },
   planDiscount: {
     fontSize: 11,
     color: '#22C55E',
-    fontWeight: '600',
+    ...inter18('semiBold'),
     marginTop: 2,
   },
 
@@ -487,7 +489,7 @@ const styles = StyleSheet.create({
     paddingVertical: 11,
     alignItems: 'center',
   },
-  viewBtnText: { color: '#6B21A8', fontWeight: '700', fontSize: 13 },
+  viewBtnText: { color: '#6B21A8', fontSize: 13, ...inter18('bold') },
   buyBtn: {
     flex: 1,
     backgroundColor: '#6B21A8',
@@ -495,7 +497,7 @@ const styles = StyleSheet.create({
     paddingVertical: 11,
     alignItems: 'center',
   },
-  buyBtnText: { color: '#FFFFFF', fontWeight: '700', fontSize: 13 },
+  buyBtnText: { color: '#FFFFFF', fontSize: 13, ...inter18('bold') },
   pressed: { opacity: 0.82 },
 
   loadingMore: {
@@ -505,7 +507,7 @@ const styles = StyleSheet.create({
     gap: 8,
     paddingVertical: 16,
   },
-  loadingMoreText: { fontSize: 13, color: '#6B21A8', fontWeight: '500' },
+  loadingMoreText: { fontSize: 13, color: '#6B21A8', ...inter18('medium') },
 
   errorBox: {
     margin: 16,
@@ -514,7 +516,7 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     alignItems: 'center',
   },
-  errorTitle: { fontSize: 15, fontWeight: '700', color: '#B91C1C', marginBottom: 6 },
+  errorTitle: { fontSize: 15, color: '#B91C1C', marginBottom: 6, ...inter18('bold') },
   errorSub: { fontSize: 13, color: '#7F1D1D', textAlign: 'center', lineHeight: 18 },
 
   emptyBox: {
@@ -524,7 +526,7 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     alignItems: 'center',
   },
-  emptyTitle: { fontSize: 16, fontWeight: '700', color: '#374151', marginBottom: 8 },
+  emptyTitle: { fontSize: 16, color: '#374151', marginBottom: 8, ...inter18('bold') },
   emptySub: { fontSize: 13, color: '#6B7280', textAlign: 'center', lineHeight: 19 },
 
   disclaimer: { paddingHorizontal: 16, paddingTop: 4 },

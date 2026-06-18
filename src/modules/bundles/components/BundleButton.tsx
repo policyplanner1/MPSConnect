@@ -2,6 +2,8 @@ import React from 'react';
 import { Pressable, PressableProps, StyleSheet, Text, View } from 'react-native';
 import Svg, { Defs, LinearGradient, Rect, Stop } from 'react-native-svg';
 
+import { inter18 } from '../../../core/theme/typography';
+
 type BundleButtonProps = Omit<PressableProps, 'style'> & {
   label: string;
   price: string;
@@ -55,16 +57,16 @@ const styles = StyleSheet.create({
   },
   label: {
     fontSize: 13,
-    fontWeight: '700',
+    ...inter18('bold'),
     color: '#FFFFFF',
     textAlign: 'center',
   },
   price: {
-    fontWeight: '800',
+    ...inter18('bold'),
   },
   originalPrice: {
     textDecorationLine: 'line-through',
-    fontWeight: '400',
+    ...inter18('regular'),
     opacity: 0.78,
   },
 });

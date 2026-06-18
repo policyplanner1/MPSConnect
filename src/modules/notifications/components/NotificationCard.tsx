@@ -1,5 +1,5 @@
 import React from 'react';
-import { StyleSheet, Text, View } from 'react-native';
+import { Pressable, StyleSheet, Text, View } from 'react-native';
 
 import PassportIcon from '../../../assets/images/icons/passport_gd.svg';
 import { inter18 } from '../../../core/theme/typography';
@@ -14,6 +14,7 @@ export type NotificationCardProps = {
   timestamp: string;
   variant?: NotificationVariant;
   thumbnail?: 'passport' | null;
+  onPress?: () => void;
 };
 
 function NotificationThumbnail({ kind }: { kind: 'passport' }) {
@@ -34,11 +35,19 @@ function NotificationCard({
   timestamp,
   variant = 'default',
   thumbnail = null,
+  onPress,
 }: NotificationCardProps) {
   const variantStyle = NOTIFICATION_VARIANT_STYLES[variant];
 
   return (
-    <View style={[styles.card, variantStyle]}>
+    <Pressable
+      onPress={onPress}
+      disabled={!onPress}
+      style={({ pressed }) => [
+        styles.card,
+        variantStyle,
+        pressed && onPress ? styles.cardPressed : null,
+      ]}>
       {thumbnail ? (
         <View style={styles.row}>
           <NotificationThumbnail kind={thumbnail} />
@@ -49,7 +58,7 @@ function NotificationCard({
       ) : (
         <CardContent body={body} timestamp={timestamp} title={title} />
       )}
-    </View>
+    </Pressable>
   );
 }
 
@@ -82,6 +91,9 @@ const styles = StyleSheet.create({
     borderColor: '#E5E7EB',
     paddingHorizontal: 14,
     paddingVertical: 13,
+  },
+  cardPressed: {
+    opacity: 0.92,
   },
   row: {
     flexDirection: 'row',

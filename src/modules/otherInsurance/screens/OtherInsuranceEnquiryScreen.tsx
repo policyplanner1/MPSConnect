@@ -14,6 +14,8 @@ import Svg, { Path } from 'react-native-svg';
 
 import { Service } from '../../services/types/service.types';
 
+import { inter18 } from '../../../core/theme/typography';
+
 type Props = {
   service: Service;
   onBack: () => void;
@@ -249,7 +251,7 @@ const styles = StyleSheet.create({
     flex: 1,
     textAlign: 'center',
     fontSize: 16,
-    fontWeight: '700',
+    ...inter18('bold'),
     color: '#14532D',
     paddingHorizontal: 8,
   },
@@ -260,7 +262,7 @@ const styles = StyleSheet.create({
 
   formHeading: {
     fontSize: 20,
-    fontWeight: '800',
+    ...inter18('bold'),
     color: '#111111',
     marginBottom: 6,
   },
@@ -274,7 +276,7 @@ const styles = StyleSheet.create({
   fieldWrap: { marginBottom: 20 },
   label: {
     fontSize: 13,
-    fontWeight: '600',
+    ...inter18('semiBold'),
     color: '#374151',
     marginBottom: 8,
   },
@@ -298,7 +300,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginTop: 8,
   },
-  submitBtnText: { color: '#FFFFFF', fontWeight: '700', fontSize: 16 },
+  submitBtnText: { color: '#FFFFFF', fontSize: 16, ...inter18('bold') },
   pressed: { opacity: 0.82 },
 
   successWrap: {
@@ -319,7 +321,7 @@ const styles = StyleSheet.create({
   successEmoji: { fontSize: 36 },
   successTitle: {
     fontSize: 22,
-    fontWeight: '800',
+    ...inter18('bold'),
     color: '#111111',
     marginBottom: 12,
     textAlign: 'center',
@@ -331,7 +333,7 @@ const styles = StyleSheet.create({
     lineHeight: 22,
     marginBottom: 12,
   },
-  successPhone: { fontWeight: '700', color: '#14532D' },
+  successPhone: { color: '#14532D', ...inter18('bold') },
   successService: {
     fontSize: 12,
     color: '#9CA3AF',
@@ -345,7 +347,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 40,
     alignItems: 'center',
   },
-  doneBtnText: { color: '#FFFFFF', fontWeight: '700', fontSize: 15 },
+  doneBtnText: { color: '#FFFFFF', fontSize: 15, ...inter18('bold') },
 });
 
 export default OtherInsuranceEnquiryScreen;

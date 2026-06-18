@@ -5,6 +5,8 @@ import Svg, { Defs, LinearGradient, Rect, Stop } from 'react-native-svg';
 import ExclusiveImage from '../../../assets/images/exclusive_image.svg';
 import MoneyImage from '../../../assets/images/money_imge.svg';
 
+import { inter18 } from '../../../core/theme/typography';
+
 type BundleCardProps = {
   highlightText: string;
   titleSuffix: string;
@@ -78,11 +80,11 @@ const styles = StyleSheet.create({
   title: {
     fontSize: 13.5,
     lineHeight: 18,
-    fontWeight: '400',
+    ...inter18('regular'),
     color: '#FFFFFF',
   },
   highlight: {
-    fontWeight: '800',
+    ...inter18('bold'),
   },
   subtitle: {
     marginTop: 2,

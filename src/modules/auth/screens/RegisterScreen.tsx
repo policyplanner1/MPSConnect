@@ -86,9 +86,12 @@ function RegisterScreen({
         password: form.password,
       });
 
-      Alert.alert('Success', response.message, [
-        { text: 'OK', onPress: onBackToLogin },
-      ]);
+      Alert.alert(
+        'Success',
+        response.message ||
+          'Account created. Check your email for a welcome message.',
+        [{ text: 'OK', onPress: onBackToLogin }],
+      );
     } catch (error) {
       Alert.alert('Error', getAuthErrorMessage(error));
     } finally {

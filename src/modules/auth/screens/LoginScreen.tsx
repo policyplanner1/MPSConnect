@@ -9,11 +9,24 @@ import {
 } from 'react-native';
 import Svg, { Path } from 'react-native-svg';
 import { inter18 } from '../../../core/theme/typography';
+import { extractUserIdFromLoginData } from '../../../core/utils/authSession';
+import {
+  extractCrmUserIdFromJwt,
+  extractCrmUserIdFromLoginData,
+  trySyncCrmUserIdFromProfile,
+} from '../../../core/utils/crmUserSession';
+import { logLoginStorageDebug } from '../../../core/utils/authDebugLog';
+import { removeMpsOAuthSession } from '../../../core/utils/mpsOAuthStorage';
 import {
   clearRememberedEmail,
   getRememberedEmail,
+  removeToken,
+  removeCrmUserId,
+  removeUserId,
+  saveCrmUserId,
   saveRememberedEmail,
   saveToken,
+  saveUserId,
 } from '../../../core/utils/storage';
 import MpscLogo from '../../../assets/images/mpsclogo.svg';
 import {
@@ -21,6 +34,11 @@ import {
   loginUser,
   type LoginPayload,
 } from '../../../services/auth.service';
+import { registerFcmTokenWithBackend } from '../../../services/pushToken.service';
+import {
+  ensureMpsOAuthToken,
+  getMpsOAuthErrorMessage,
+} from '../../../services/mpsOAuth.service';
 import AuthBackground from '../components/AuthBackground';
 import AuthButton from '../components/AuthButton';
 import AuthInput from '../components/AuthInput';
@@ -108,7 +126,13 @@ function LoginScreen({
 
     setIsSubmitting(true);
     try {
+      await removeToken();
+      await removeUserId();
+      await removeCrmUserId();
+      await removeMpsOAuthSession();
+
       const response = await loginUser(payload);
+      await logLoginStorageDebug('after login API (before save)', response);
 
       if (!response.token) {
         Alert.alert('Error', 'Login succeeded but no token was returned.');
@@ -117,12 +141,58 @@ function LoginScreen({
 
       await saveToken(response.token);
 
+      const userId = extractUserIdFromLoginData(
+        response.data as Record<string, unknown> | undefined,
+      );
+      if (userId) {
+        await saveUserId(userId);
+      }
+
+      const crmFromLogin = extractCrmUserIdFromLoginData(
+        response.data as Record<string, unknown> | undefined,
+      );
+      if (crmFromLogin != null) {
+        await saveCrmUserId(crmFromLogin);
+      } else {
+        const crmFromJwt = extractCrmUserIdFromJwt(response.token);
+        if (crmFromJwt != null) {
+          await saveCrmUserId(crmFromJwt);
+        }
+      }
+
+      await trySyncCrmUserIdFromProfile();
+      await logLoginStorageDebug('after user token saved', response);
+
+      try {
+        const mpsSession = await ensureMpsOAuthToken();
+        if (__DEV__) {
+          // eslint-disable-next-line no-console
+          console.log('[Login] MPS OAuth session (from API, now stored):', JSON.stringify(mpsSession, null, 2));
+        }
+        await logLoginStorageDebug('after MPS OAuth saved', response);
+      } catch (oauthError) {
+        await removeToken();
+        await removeUserId();
+        await removeCrmUserId();
+        await removeMpsOAuthSession();
+        await logLoginStorageDebug('MPS OAuth failed — storage cleared');
+        if (__DEV__) {
+          // eslint-disable-next-line no-console
+          console.warn('[Login] MPS OAuth error:', oauthError);
+        }
+        Alert.alert('MPS authentication', getMpsOAuthErrorMessage(oauthError));
+        return;
+      }
+
       if (rememberMe) {
         await saveRememberedEmail(payload.email);
       } else {
         await clearRememberedEmail();
       }
 
+      await logLoginStorageDebug('login complete — final local state', response);
+      // Best-effort: register device FCM token for real push notifications.
+      await registerFcmTokenWithBackend().catch(() => undefined);
       onContinueToApp();
     } catch (error) {
       Alert.alert('Error', getAuthErrorMessage(error));

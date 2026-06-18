@@ -1,5 +1,15 @@
 import React, { useEffect, useState } from 'react';
-import { getToken, removeToken } from '../../../core/utils/storage';
+import { ensureUserIdStored } from '../../../core/utils/authSession';
+import { trySyncCrmUserIdFromProfile } from '../../../core/utils/crmUserSession';
+import { removeMpsOAuthSession } from '../../../core/utils/mpsOAuthStorage';
+import {
+  getToken,
+  removeCrmUserId,
+  removeToken,
+  removeUserId,
+} from '../../../core/utils/storage';
+import { ensureMpsOAuthToken } from '../../../services/mpsOAuth.service';
+import { registerFcmTokenWithBackend } from '../../../services/pushToken.service';
 import ForgotPasswordScreen from '../screens/ForgotPasswordScreen';
 import LoginScreen from '../screens/LoginScreen';
 import OnboardingScreen from '../screens/OnboardingScreen';
@@ -43,7 +53,18 @@ function AuthStack() {
       }
 
       if (token) {
+        // Show home immediately — CRM/MPS sync can take 75s+ when profile APIs are slow.
         setCurrentScreen('Home');
+        void (async () => {
+          try {
+            await ensureUserIdStored();
+            await trySyncCrmUserIdFromProfile();
+            await ensureMpsOAuthToken();
+            await registerFcmTokenWithBackend();
+          } catch {
+            // Offline or CRM unreachable — home is already visible; login refreshes MPS token
+          }
+        })();
         return;
       }
 
@@ -59,6 +80,9 @@ function AuthStack() {
 
   const handleLogout = async () => {
     await removeToken();
+    await removeUserId();
+    await removeCrmUserId();
+    await removeMpsOAuthSession();
     setCurrentScreen('Login');
   };
 

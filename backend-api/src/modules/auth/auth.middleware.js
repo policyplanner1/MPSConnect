@@ -39,10 +39,15 @@ const protect = async (req, res, next) => {
     |--------------------------------------------------------------------------
     */
 
-    const decoded = jwt.verify(
-      token,
-      process.env.JWT_SECRET
-    );
+    const secret = String(process.env.JWT_SECRET || "").trim();
+    if (!secret) {
+      return res.status(500).json({
+        success: false,
+        message: "Server misconfigured: JWT_SECRET missing",
+      });
+    }
+
+    const decoded = jwt.verify(token, secret);
 
     /*
     |--------------------------------------------------------------------------

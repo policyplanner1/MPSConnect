@@ -1,6 +1,7 @@
 import React, { useRef, useState } from 'react';
 import {
   ActivityIndicator,
+  Alert,
   Image,
   Pressable,
   ScrollView,
@@ -12,35 +13,37 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Svg, { Circle, Path } from 'react-native-svg';
 
+import AppScreenHeader from '../../../components/AppScreenHeader';
 import { IMAGE_BASE_URL } from '../../../config/env';
+import { inter18 } from '../../../core/theme/typography';
+import {
+  getServiceEnquiryErrorMessage,
+  mapFormToEnquiryPayload,
+  submitServiceEnquiry,
+} from '../api/serviceEnquiryApi';
 import { useServiceDetails } from '../hooks/useServices';
 import {
   EnquiryField,
   ServiceDocument,
   ServiceSection,
 } from '../types/service.types';
+import {
+  getCrmEnquiryUserId,
+  getCrmUserIdLinkErrorMessage,
+  trySyncCrmUserIdFromProfile,
+} from '../../../core/utils/crmUserSession';
+import { addServiceCartItem, getServiceCartErrorMessage } from '../api/serviceCartApi';
+import { validateEnquiryForm } from '../utils/enquiryValidation';
 
 type Props = {
   serviceId: number;
   onBack: () => void;
+  onOpenCart?: () => void;
+  onOpenNotifications?: () => void;
+  onOpenRewards?: () => void;
 };
 
 // ─── Icons ───────────────────────────────────────────────────────────────────
-
-function BackIcon() {
-  return (
-    <Svg width={22} height={22} viewBox="0 0 24 24">
-      <Path
-        d="M15 6L9 12L15 18"
-        stroke="#111827"
-        strokeWidth="2.2"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-        fill="none"
-      />
-    </Svg>
-  );
-}
 
 function ShareIcon() {
   return (
@@ -215,11 +218,83 @@ function parseTrustStat(stat: string): { value: string; label: string } {
   };
 }
 
+const DEFAULT_ENQUIRY_FIELDS: EnquiryField[] = [
+  {
+    label: 'Name',
+    field_name: 'name',
+    field_type: 'text',
+    options: null,
+    is_required: 1,
+  },
+  {
+    label: 'City',
+    field_name: 'city',
+    field_type: 'select',
+    options: [
+      'Mumbai',
+      'Delhi',
+      'Bangalore',
+      'Hyderabad',
+      'Chennai',
+      'Kolkata',
+      'Pune',
+      'Ahmedabad',
+      'Jaipur',
+      'New York',
+      'Other',
+    ],
+    is_required: 1,
+  },
+  {
+    label: 'Mobile Number',
+    field_name: 'mobile',
+    field_type: 'text',
+    options: null,
+    is_required: 1,
+  },
+  {
+    label: 'Email ID',
+    field_name: 'email',
+    field_type: 'text',
+    options: null,
+    is_required: 1,
+  },
+  {
+    label: 'Message',
+    field_name: 'message',
+    field_type: 'textarea',
+    options: null,
+    is_required: 0,
+  },
+];
+
+function resolveEnquiryFields(apiFields: EnquiryField[]): EnquiryField[] {
+  return apiFields.length > 0 ? apiFields : DEFAULT_ENQUIRY_FIELDS;
+}
+
 function fieldIcon(fieldName: string) {
-  if (fieldName === 'name') { return <PersonIcon />; }
-  if (fieldName === 'mobile_number') { return <PhoneIcon />; }
-  if (fieldName === 'email') { return <EmailIcon />; }
+  const key = fieldName.toLowerCase();
+  if (key === 'name' || key === 'full_name') {
+    return <PersonIcon />;
+  }
+  if (['mobile', 'mobile_number', 'phone', 'contact_number'].includes(key)) {
+    return <PhoneIcon />;
+  }
+  if (key === 'email' || key === 'email_id') {
+    return <EmailIcon />;
+  }
   return null;
+}
+
+function fieldKeyboardType(fieldName: string): 'default' | 'email-address' | 'phone-pad' {
+  const key = fieldName.toLowerCase();
+  if (key === 'email' || key === 'email_id') {
+    return 'email-address';
+  }
+  if (['mobile', 'mobile_number', 'phone', 'contact_number'].includes(key)) {
+    return 'phone-pad';
+  }
+  return 'default';
 }
 
 // ─── Sub-components ───────────────────────────────────────────────────────────
@@ -227,7 +302,7 @@ function fieldIcon(fieldName: string) {
 function StarRating() {
   return (
     <View style={styles.ratingRow}>
-      <Text style={styles.ratingValue}>5.0</Text>
+      <Text style={[styles.ratingValue, inter18('bold')]}>5.0</Text>
       {[1, 2, 3, 4, 5].map(i => (
         <View key={i}><StarFull /></View>
       ))}
@@ -243,7 +318,7 @@ function FaqSection({ sections }: { sections: ServiceSection[] }) {
   return (
     <View style={styles.faqCard}>
       <View style={styles.faqCardHeader}>
-        <Text style={styles.faqTitle}>{faqSection.title}</Text>
+        <Text style={[styles.faqTitle, inter18('bold')]}>{faqSection.title}</Text>
         <QuestionCircleIcon />
       </View>
       {faqSection.content.map((item, i) => (
@@ -255,10 +330,10 @@ function FaqSection({ sections }: { sections: ServiceSection[] }) {
             <View style={styles.faqToggleBox}>
               <Text style={styles.faqToggleChar}>{openIndex === i ? '−' : '+'}</Text>
             </View>
-            <Text style={styles.faqQuestionText}>{item.question}</Text>
+            <Text style={[styles.faqQuestionText, inter18('semiBold')]}>{item.question}</Text>
           </View>
           {openIndex === i && (
-            <Text style={styles.faqAnswer}>{item.answer}</Text>
+            <Text style={[styles.faqAnswer, inter18('regular')]}>{item.answer}</Text>
           )}
         </Pressable>
       ))}
@@ -271,8 +346,8 @@ function HelpBannerSection() {
     <View style={styles.helpBanner}>
       <View style={styles.helpTopRow}>
         <View style={styles.helpTextBlock}>
-          <Text style={styles.helpTitle}>Need help with{'\n'}Government Documents?</Text>
-          <Text style={styles.helpSub}>
+          <Text style={[styles.helpTitle, inter18('bold')]}>Need help with{'\n'}Government Documents?</Text>
+          <Text style={[styles.helpSub, inter18('regular')]}>
             Our team will guide you step by step, from submission to completion.
           </Text>
         </View>
@@ -283,10 +358,10 @@ function HelpBannerSection() {
       </View>
       <View style={styles.helpBtnRow}>
         <Pressable style={styles.helpPhoneBtn}>
-          <Text style={styles.helpPhoneText}>+91 7798 612243</Text>
+          <Text style={[styles.helpPhoneText, inter18('bold')]}>+91 7798 612243</Text>
         </Pressable>
         <Pressable style={styles.helpTalkBtn}>
-          <Text style={styles.helpTalkText}>Talk To Us</Text>
+          <Text style={[styles.helpTalkText, inter18('bold')]}>Talk To Us</Text>
         </Pressable>
       </View>
     </View>
@@ -304,9 +379,9 @@ function ParagraphsSection({
       {paragraphs.map((p, i) => (
         <View key={i} style={styles.paragraphCard}>
           <View style={styles.paragraphText}>
-            <Text style={styles.paragraphTitle}>{p.title}</Text>
+            <Text style={[styles.paragraphTitle, inter18('bold')]}>{p.title}</Text>
             {p.content.map((line, j) => (
-              <Text key={j} style={styles.paragraphBody}>{line}</Text>
+              <Text key={j} style={[styles.paragraphBody, inter18('regular')]}>{line}</Text>
             ))}
           </View>
           <Text style={styles.paragraphEmoji}>📁</Text>
@@ -327,7 +402,7 @@ function DocumentsSection({ documents }: { documents: ServiceDocument[] }) {
   return (
     <View style={styles.docCard}>
       <View style={styles.docHeader}>
-        <Text style={styles.docTitle}>Documents to keep handy</Text>
+        <Text style={[styles.docTitle, inter18('bold')]}>Documents to keep handy</Text>
         <Text style={styles.docFolderEmoji}>📂</Text>
       </View>
 
@@ -336,21 +411,31 @@ function DocumentsSection({ documents }: { documents: ServiceDocument[] }) {
         <Pressable
           onPress={() => setTab('store')}
           style={[styles.docTab, tab === 'store' && styles.docTabActive]}>
-          <Text style={[styles.docTabText, tab === 'store' && styles.docTabTextActive]}>
+          <Text
+            style={[
+              styles.docTabText,
+              inter18('semiBold'),
+              tab === 'store' && styles.docTabTextActive,
+            ]}>
             Store Visit
           </Text>
         </Pressable>
         <Pressable
           onPress={() => setTab('upload')}
           style={[styles.docTab, tab === 'upload' && styles.docTabActive]}>
-          <Text style={[styles.docTabText, tab === 'upload' && styles.docTabTextActive]}>
+          <Text
+            style={[
+              styles.docTabText,
+              inter18('semiBold'),
+              tab === 'upload' && styles.docTabTextActive,
+            ]}>
             Upload
           </Text>
         </Pressable>
       </View>
 
       {/* Note */}
-      <Text style={styles.docNote}>
+      <Text style={[styles.docNote, inter18('regular')]}>
         Note: Documents older than 3 months are not valid. Please provide necessary document issued within the last 3 months.
       </Text>
 
@@ -358,7 +443,7 @@ function DocumentsSection({ documents }: { documents: ServiceDocument[] }) {
       {visible.map(doc => (
         <View key={doc.id} style={styles.docItem}>
           <CheckCircleGreen />
-          <Text style={styles.docItemText}>{doc.document_name}</Text>
+          <Text style={[styles.docItemText, inter18('medium')]}>{doc.document_name}</Text>
         </View>
       ))}
 
@@ -391,7 +476,7 @@ function JourneySection({
 
   return (
     <View style={styles.journeyCard}>
-      <Text style={styles.journeyTitle}>{j.title}</Text>
+      <Text style={[styles.journeyTitle, inter18('bold')]}>{j.title}</Text>
       {j.content.map(([stepTitle, stepDesc], i) => (
         <View key={i} style={styles.journeyStep}>
           <View style={styles.journeyTimeline}>
@@ -399,8 +484,8 @@ function JourneySection({
             {i < j.content.length - 1 && <View style={styles.journeyLine} />}
           </View>
           <View style={styles.journeyStepContent}>
-            <Text style={styles.journeyStepTitle}>{stepTitle}</Text>
-            <Text style={styles.journeyStepDesc}>{stepDesc}</Text>
+            <Text style={[styles.journeyStepTitle, inter18('bold')]}>{stepTitle}</Text>
+            <Text style={[styles.journeyStepDesc, inter18('regular')]}>{stepDesc}</Text>
           </View>
         </View>
       ))}
@@ -408,29 +493,102 @@ function JourneySection({
   );
 }
 
-function EnquiryForm({ fields }: { fields: EnquiryField[] }) {
+type EnquiryFormProps = {
+  apiFields: EnquiryField[];
+  serviceId: number;
+  variantId: number;
+};
+
+function EnquiryForm({ apiFields, serviceId, variantId }: EnquiryFormProps) {
+  const fields = resolveEnquiryFields(apiFields);
   const [values, setValues] = useState<Record<string, string>>({});
+  const [errors, setErrors] = useState<Record<string, string>>({});
   const [openDropdown, setOpenDropdown] = useState<string | null>(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [successRef, setSuccessRef] = useState<string | null>(null);
 
-  if (!fields.length) { return null; }
-
-  const setValue = (name: string, val: string) =>
+  const setValue = (name: string, val: string) => {
     setValues(prev => ({ ...prev, [name]: val }));
+    if (errors[name]) {
+      setErrors(prev => {
+        const next = { ...prev };
+        delete next[name];
+        return next;
+      });
+    }
+    if (successRef) {
+      setSuccessRef(null);
+    }
+  };
+
+  const handleSubmit = async () => {
+    const validationErrors = validateEnquiryForm(values, fields);
+    if (Object.keys(validationErrors).length > 0) {
+      setErrors(validationErrors);
+      return;
+    }
+
+    let userId = await getCrmEnquiryUserId();
+    if (userId == null) {
+      userId = await trySyncCrmUserIdFromProfile();
+    }
+    if (userId == null) {
+      Alert.alert('CRM account required', getCrmUserIdLinkErrorMessage());
+      return;
+    }
+
+    const payload = mapFormToEnquiryPayload(values, serviceId, variantId, userId);
+
+    setIsSubmitting(true);
+    setErrors({});
+    try {
+      const response = await submitServiceEnquiry(payload);
+      setSuccessRef(response.data.enquiry_ref);
+      setValues({});
+      Alert.alert(
+        'Enquiry submitted',
+        `${response.message}\n\nReference: ${response.data.enquiry_ref}`,
+      );
+      if (__DEV__) {
+        // eslint-disable-next-line no-console
+        console.log('[ServiceEnquiry] submitted:', response);
+      }
+    } catch (error) {
+      Alert.alert('Could not submit', getServiceEnquiryErrorMessage(error));
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
 
   return (
     <View style={styles.formCard}>
-      <Text style={styles.formTitle}>Interested in this Service?</Text>
-      <Text style={styles.formSubtitle}>
-        Please fill out the form below and our team will get in touch with you shortly.
+      <Text style={[styles.formTitle, inter18('bold')]}>Interested in this Service?</Text>
+      <Text style={[styles.formSubtitle, inter18('regular')]}>
+        Fill in the details below and our experts will get in touch with you.
       </Text>
+
+      {successRef ? (
+        <View style={styles.formSuccessBanner}>
+          <Text style={[styles.formSuccessText, inter18('medium')]}>
+            Submitted successfully. Reference: {successRef}
+          </Text>
+        </View>
+      ) : null}
 
       {fields.map(field => {
         const icon = fieldIcon(field.field_name);
         const val = values[field.field_name] ?? '';
+        const fieldError = errors[field.field_name];
+        const isMobile = ['mobile', 'mobile_number', 'phone', 'contact_number'].includes(
+          field.field_name.toLowerCase(),
+        );
+        const isEmail =
+          field.field_name.toLowerCase() === 'email' ||
+          field.field_name.toLowerCase() === 'email_id';
 
         return (
           <View key={field.field_name} style={styles.formField}>
-            <Text style={styles.formLabel}>
+            <Text style={[styles.formLabel, inter18('medium')]}>
               {field.is_required === 1 && (
                 <Text style={styles.required}>*</Text>
               )}
@@ -438,30 +596,50 @@ function EnquiryForm({ fields }: { fields: EnquiryField[] }) {
             </Text>
 
             {field.field_type === 'text' && (
-              <View style={styles.inputRow}>
+              <View
+                style={[
+                  styles.inputRow,
+                  fieldError ? styles.inputRowError : null,
+                ]}>
                 <TextInput
-                  style={styles.textInput}
-                  placeholder={`Enter your ${field.label.toLowerCase()} here`}
+                  style={[styles.textInput, inter18('regular')]}
+                  placeholder={
+                    isMobile
+                      ? 'Enter mobile number'
+                      : isEmail
+                        ? 'Enter email address'
+                        : `Enter ${field.label.toLowerCase()}`
+                  }
                   placeholderTextColor="#9CA3AF"
                   value={val}
                   onChangeText={v => setValue(field.field_name, v)}
+                  keyboardType={fieldKeyboardType(field.field_name)}
+                  autoCapitalize={isEmail ? 'none' : 'words'}
+                  editable={!isSubmitting}
                 />
-                {icon && <View style={styles.inputIcon}>{icon}</View>}
+                {icon ? <View style={styles.inputIcon}>{icon}</View> : null}
               </View>
             )}
 
             {field.field_type === 'select' && (
               <View>
                 <Pressable
-                  style={styles.selectTrigger}
+                  style={[
+                    styles.selectTrigger,
+                    fieldError ? styles.inputRowError : null,
+                  ]}
+                  disabled={isSubmitting}
                   onPress={() =>
                     setOpenDropdown(
                       openDropdown === field.field_name ? null : field.field_name,
                     )
                   }>
                   <Text
-                    style={val ? styles.selectValue : styles.selectPlaceholder}>
-                    {val || 'Select an option'}
+                    style={[
+                      val ? styles.selectValue : styles.selectPlaceholder,
+                      inter18('regular'),
+                    ]}>
+                    {val || 'Select city'}
                   </Text>
                   <ChevronDownIcon flipped={openDropdown === field.field_name} />
                 </Pressable>
@@ -474,7 +652,9 @@ function EnquiryForm({ fields }: { fields: EnquiryField[] }) {
                         setValue(field.field_name, opt);
                         setOpenDropdown(null);
                       }}>
-                      <Text style={styles.dropdownOptionText}>{opt}</Text>
+                      <Text style={[styles.dropdownOptionText, inter18('regular')]}>
+                        {opt}
+                      </Text>
                     </Pressable>
                   ))}
               </View>
@@ -482,22 +662,38 @@ function EnquiryForm({ fields }: { fields: EnquiryField[] }) {
 
             {field.field_type === 'textarea' && (
               <TextInput
-                style={styles.textArea}
-                placeholder="Enter any specific questions or requirements you'd like to share"
+                style={[
+                  styles.textArea,
+                  inter18('regular'),
+                  fieldError ? styles.inputRowError : null,
+                ]}
+                placeholder="Enter your message here..."
                 placeholderTextColor="#9CA3AF"
                 value={val}
                 onChangeText={v => setValue(field.field_name, v)}
                 multiline
                 numberOfLines={4}
                 textAlignVertical="top"
+                editable={!isSubmitting}
               />
             )}
+
+            {fieldError ? (
+              <Text style={[styles.formErrorText, inter18('regular')]}>{fieldError}</Text>
+            ) : null}
           </View>
         );
       })}
 
-      <Pressable style={styles.submitBtn}>
-        <Text style={styles.submitBtnText}>Submit</Text>
+      <Pressable
+        style={[styles.submitBtn, isSubmitting && styles.submitBtnDisabled]}
+        onPress={handleSubmit}
+        disabled={isSubmitting}>
+        {isSubmitting ? (
+          <ActivityIndicator color="#FFFFFF" size="small" />
+        ) : (
+          <Text style={[styles.submitBtnText, inter18('bold')]}>SUBMIT</Text>
+        )}
       </Pressable>
     </View>
   );
@@ -505,7 +701,13 @@ function EnquiryForm({ fields }: { fields: EnquiryField[] }) {
 
 // ─── Screen ───────────────────────────────────────────────────────────────────
 
-export default function ServiceDetailScreen({ serviceId, onBack }: Props) {
+export default function ServiceDetailScreen({
+  serviceId,
+  onBack,
+  onOpenCart,
+  onOpenNotifications,
+  onOpenRewards,
+}: Props) {
   const {
     service,
     variants,
@@ -516,23 +718,50 @@ export default function ServiceDetailScreen({ serviceId, onBack }: Props) {
     error,
   } = useServiceDetails(serviceId);
   const [selectedIndex, setSelectedIndex] = useState(0);
+  const [isAddingToCart, setIsAddingToCart] = useState(false);
   const scrollRef = useRef<ScrollView>(null);
   const contentYRef = useRef(0);
   const enquiryOffsetYRef = useRef(0);
 
-  const scrollToEnquiry = () => {
-    scrollRef.current?.scrollTo({
-      y: contentYRef.current + enquiryOffsetYRef.current,
-      animated: true,
-    });
+  const handleCtaPress = async () => {
+    if (!onOpenCart || !service || variants.length === 0) {
+      scrollRef.current?.scrollTo({
+        y: contentYRef.current + enquiryOffsetYRef.current,
+        animated: true,
+      });
+      return;
+    }
+
+    let userId = await getCrmEnquiryUserId();
+    if (userId == null) {
+      userId = await trySyncCrmUserIdFromProfile();
+    }
+    if (userId == null) {
+      Alert.alert('CRM account required', getCrmUserIdLinkErrorMessage());
+      return;
+    }
+
+    const v = variants[selectedIndex];
+    setIsAddingToCart(true);
+    try {
+      await addServiceCartItem({
+        user_id: userId,
+        service_id: service.id,
+        variant_id: v.id,
+        quantity: 1,
+      });
+      onOpenCart();
+    } catch (error) {
+      Alert.alert('Could not add to cart', getServiceCartErrorMessage(error));
+    } finally {
+      setIsAddingToCart(false);
+    }
   };
 
   if (loading) {
     return (
       <SafeAreaView style={styles.safeArea}>
-        <Pressable onPress={onBack} style={styles.loadingBack}>
-          <BackIcon />
-        </Pressable>
+        <AppScreenHeader variant="search" onBack={onBack} searchPlaceholder="Search services" />
         <View style={styles.centered}>
           <ActivityIndicator size="large" color="#6D28D9" />
         </View>
@@ -543,11 +772,9 @@ export default function ServiceDetailScreen({ serviceId, onBack }: Props) {
   if (error || !service || variants.length === 0) {
     return (
       <SafeAreaView style={styles.safeArea}>
-        <Pressable onPress={onBack} style={styles.loadingBack}>
-          <BackIcon />
-        </Pressable>
+        <AppScreenHeader variant="search" onBack={onBack} searchPlaceholder="Search services" />
         <View style={styles.centered}>
-          <Text style={styles.errorText}>{error ?? 'Service not found'}</Text>
+          <Text style={[styles.errorText, inter18('regular')]}>{error ?? 'Service not found'}</Text>
         </View>
       </SafeAreaView>
     );
@@ -561,8 +788,20 @@ export default function ServiceDetailScreen({ serviceId, onBack }: Props) {
   const cashPrice = Math.max(0, price - rewardPoints);
   const showRewardSplit = rewardPoints > 0 && cashPrice > 0;
 
+  const walletBalance = `₹${price.toLocaleString('en-IN', { maximumFractionDigits: 0 })}`;
+  const searchPlaceholder = `Search "${service.name}"`;
+
   return (
     <SafeAreaView style={styles.safeArea}>
+      <AppScreenHeader
+        variant="search"
+        onBack={onBack}
+        searchPlaceholder={searchPlaceholder}
+        onNotificationPress={onOpenNotifications}
+        onWalletPress={onOpenRewards}
+        walletBalance={walletBalance}
+        notificationCount={1}
+      />
       <ScrollView
         ref={scrollRef}
         bounces={false}
@@ -572,17 +811,13 @@ export default function ServiceDetailScreen({ serviceId, onBack }: Props) {
 
         {/* ── Hero ── */}
         <View style={styles.hero}>
-          <Pressable onPress={onBack} style={styles.backBtn}>
-            <BackIcon />
-          </Pressable>
-
           <View style={styles.heroRow}>
             <View style={styles.heroTextBlock}>
-              <Text style={styles.heroTitle}>
+              <Text style={[styles.heroTitle, inter18('bold')]}>
                 Simplifying{'\n'}Aadhaar for You
               </Text>
-              <Text style={styles.heroSub}>Efficient Support.</Text>
-              <Text style={styles.heroSub}>Zero Hassle.</Text>
+              <Text style={[styles.heroSub, inter18('medium')]}>Efficient Support.</Text>
+              <Text style={[styles.heroSub, inter18('medium')]}>Zero Hassle.</Text>
             </View>
             <Image
               source={{ uri: variantImageUri }}
@@ -609,14 +844,19 @@ export default function ServiceDetailScreen({ serviceId, onBack }: Props) {
                   key={v.id}
                   onPress={() => setSelectedIndex(i)}
                   style={[styles.tab, selected && styles.tabSelected]}>
-                  <Text style={[styles.tabTitle, selected && styles.tabTitleSelected]}>
+                  <Text
+                    style={[
+                      styles.tabTitle,
+                      inter18('semiBold'),
+                      selected && styles.tabTitleSelected,
+                    ]}>
                     {v.title}
                   </Text>
                   <View style={styles.tabPriceRow}>
-                    <Text style={styles.tabPrice}>
+                    <Text style={[styles.tabPrice, inter18('bold')]}>
                       ₹{parseFloat(v.price).toFixed(0)}
                     </Text>
-                    <Text style={styles.tabOriginalPrice}>
+                    <Text style={[styles.tabOriginalPrice, inter18('regular')]}>
                       ₹{parseFloat(v.original_price).toFixed(0)}
                     </Text>
                   </View>
@@ -631,12 +871,12 @@ export default function ServiceDetailScreen({ serviceId, onBack }: Props) {
 
           {/* Title + Rating */}
           <View style={styles.titleRow}>
-            <Text style={styles.variantTitle}>{variant.title}</Text>
+            <Text style={[styles.variantTitle, inter18('bold')]}>{variant.title}</Text>
             <StarRating />
           </View>
 
           {/* Description */}
-          <Text style={styles.description}>{variant.short_description}</Text>
+          <Text style={[styles.description, inter18('regular')]}>{variant.short_description}</Text>
 
           {/* Offer Banner */}
           <View style={styles.offerBanner}>
@@ -644,28 +884,33 @@ export default function ServiceDetailScreen({ serviceId, onBack }: Props) {
               <Text style={styles.offerEmoji}>🎁</Text>
             </View>
             <View style={styles.offerTextWrap}>
-              <Text style={styles.offerBold}>Upto 50% Off on renewal</Text>
-              <Text style={styles.offerSub}>Offer valid today</Text>
+              <Text style={[styles.offerBold, inter18('bold')]}>Upto 50% Off on renewal</Text>
+              <Text style={[styles.offerSub, inter18('regular')]}>Offer valid today</Text>
             </View>
             <View style={styles.offerBadge}>
-              <Text style={styles.offerBadgeText}>Offer valid today</Text>
+              <Text style={[styles.offerBadgeText, inter18('semiBold')]}>Offer valid today</Text>
             </View>
           </View>
 
           {/* CTA Button */}
-          <Pressable style={styles.ctaBtn} onPress={scrollToEnquiry}>
-            <Text style={styles.ctaBtnText}>
-              {showRewardSplit
-                ? `₹${cashPrice.toFixed(0)} + ⭐ ${rewardPoints.toFixed(0)}`
-                : `₹${price.toFixed(0)}`}
-            </Text>
+          <Pressable
+            style={[styles.ctaBtn, isAddingToCart && styles.ctaBtnDisabled]}
+            onPress={handleCtaPress}
+            disabled={isAddingToCart}>
+            {isAddingToCart ? (
+              <ActivityIndicator color="#FFFFFF" size="small" />
+            ) : (
+              <Text style={[styles.ctaBtnText, inter18('bold')]}>
+                {showRewardSplit
+                  ? `₹${cashPrice.toFixed(0)} + ⭐ ${rewardPoints.toFixed(0)}`
+                  : `₹${price.toFixed(0)}`}
+              </Text>
+            )}
           </Pressable>
 
           {/* Save for Later */}
           <Pressable style={styles.saveBtn}>
-            <Text style={styles.saveBtnBold}>
-              Save for later
-            </Text>
+            <Text style={[styles.saveBtnBold, inter18('bold')]}>Save for later</Text>
           </Pressable>
 
           {/* Details List */}
@@ -674,7 +919,7 @@ export default function ServiceDetailScreen({ serviceId, onBack }: Props) {
               {variant.details.map((detail, i) => (
                 <View key={i} style={styles.detailItem}>
                   <CheckCirclePurple />
-                  <Text style={styles.detailText}>{detail}</Text>
+                  <Text style={[styles.detailText, inter18('medium')]}>{detail}</Text>
                 </View>
               ))}
             </View>
@@ -692,8 +937,10 @@ export default function ServiceDetailScreen({ serviceId, onBack }: Props) {
                       styles.trustItem,
                       i < variant.trust_stats.length - 1 && styles.trustItemBorder,
                     ]}>
-                    <Text style={styles.trustValue}>{value}</Text>
-                    {label ? <Text style={styles.trustLabel}>{label}</Text> : null}
+                    <Text style={[styles.trustValue, inter18('bold')]}>{value}</Text>
+                    {label ? (
+                      <Text style={[styles.trustLabel, inter18('regular')]}>{label}</Text>
+                    ) : null}
                   </View>
                 );
               })}
@@ -711,7 +958,11 @@ export default function ServiceDetailScreen({ serviceId, onBack }: Props) {
 
           {/* ── Enquiry Form ── */}
           <View onLayout={(e) => { enquiryOffsetYRef.current = e.nativeEvent.layout.y; }}>
-            <EnquiryForm fields={enquiryFields} />
+            <EnquiryForm
+              apiFields={enquiryFields}
+              serviceId={service.id}
+              variantId={variant.id}
+            />
           </View>
 
           {/* ── FAQ ── */}
@@ -743,17 +994,6 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
 
-  loadingBack: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: '#F3F4F6',
-    alignItems: 'center',
-    justifyContent: 'center',
-    margin: 16,
-    marginTop: 20,
-  },
-
   errorText: {
     fontSize: 14,
     color: '#6B7280',
@@ -764,27 +1004,14 @@ const styles = StyleSheet.create({
   // ── Hero
   hero: {
     backgroundColor: '#FFFFFF',
-    minHeight: 210,
+    minHeight: 180,
     overflow: 'hidden',
-  },
-
-  backBtn: {
-    position: 'absolute',
-    top: 14,
-    left: 14,
-    zIndex: 10,
-    width: 38,
-    height: 38,
-    borderRadius: 19,
-    backgroundColor: '#F3F4F6',
-    alignItems: 'center',
-    justifyContent: 'center',
   },
 
   heroRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingTop: 56,
+    paddingTop: 16,
     paddingBottom: 20,
     paddingLeft: 16,
   },
@@ -796,7 +1023,6 @@ const styles = StyleSheet.create({
 
   heroTitle: {
     fontSize: 20,
-    fontWeight: '800',
     color: '#111827',
     lineHeight: 26,
     marginBottom: 10,
@@ -805,7 +1031,6 @@ const styles = StyleSheet.create({
   heroSub: {
     fontSize: 13,
     color: '#6B7280',
-    fontWeight: '500',
     textAlign: 'right',
     lineHeight: 20,
   },
@@ -991,10 +1216,13 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
 
+  ctaBtnDisabled: {
+    opacity: 0.7,
+  },
+
   ctaBtnText: {
     color: '#FFFFFF',
     fontSize: 17,
-    fontWeight: '700',
     letterSpacing: 0.3,
   },
 
@@ -1305,9 +1533,8 @@ const styles = StyleSheet.create({
   },
 
   formTitle: {
-    fontSize: 16,
-    fontWeight: '800',
-    color: '#111827',
+    fontSize: 17,
+    color: '#5B21B6',
     marginBottom: 6,
   },
 
@@ -1417,9 +1644,37 @@ const styles = StyleSheet.create({
 
   submitBtnText: {
     fontSize: 16,
-    fontWeight: '700',
     color: '#FFFFFF',
-    letterSpacing: 0.3,
+    letterSpacing: 0.5,
+  },
+
+  submitBtnDisabled: {
+    opacity: 0.7,
+  },
+
+  inputRowError: {
+    borderColor: '#EF4444',
+  },
+
+  formErrorText: {
+    fontSize: 12,
+    color: '#EF4444',
+    marginTop: 4,
+  },
+
+  formSuccessBanner: {
+    backgroundColor: '#ECFDF5',
+    borderWidth: 1,
+    borderColor: '#A7F3D0',
+    borderRadius: 8,
+    padding: 12,
+    marginBottom: 12,
+  },
+
+  formSuccessText: {
+    fontSize: 13,
+    color: '#047857',
+    lineHeight: 18,
   },
 
   // ── FAQ

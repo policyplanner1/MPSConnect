@@ -7,42 +7,88 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-/**
- * |--------------------------------------------------------------------------
- * | User Model
- * |--------------------------------------------------------------------------
- */
+model Banner {
+  id            BigInt    @id @default(autoincrement())
+  title         String
+  subtitle      String?
+  imageUrl      String
+  redirectType  String
+  redirectValue String
+  buttonText    String?
+  priority      Int       @default(0)
+  isActive      Boolean   @default(true)
+  startDate     DateTime?
+  endDate       DateTime?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
 
-model User {
-  id String @id @default(cuid())
-
-  name String
-
-  email String @unique
-
-  contactNumber String? @unique
-
-  password String
-
-  role String @default("USER")
-
-  isVerified Boolean @default(false)
-
-  isActive Boolean @default(true)
-
-  createdAt DateTime @default(now())
-
-  updatedAt DateTime @updatedAt
+  @@map("banners")
 }
 
-model PasswordReset {
+model document {
+  id               String           @id
+  title            String
+  description      String?
+  fileName         String
+  fileUrl          String
+  fileType         String
+  fileSize         Int
+  tags             String?
+  uploadedById     String
+  categoryId       String
+  createdAt        DateTime         @default(now())
+  updatedAt        DateTime
+  documentcategory documentcategory @relation(fields: [categoryId], references: [id], map: "Document_categoryId_fkey")
+  user             user             @relation(fields: [uploadedById], references: [id], map: "Document_uploadedById_fkey")
+
+  @@index([categoryId], map: "Document_categoryId_fkey")
+  @@index([uploadedById], map: "Document_uploadedById_fkey")
+}
+
+model documentcategory {
+  id          String     @id
+  name        String     @unique(map: "DocumentCategory_name_key")
+  description String?
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime
+  document    document[]
+}
+
+model passwordreset {
   id        Int      @id @default(autoincrement())
   email     String
   otp       String   @db.VarChar(10)
-  expiresAt DateTime @map("expires_at")
+  expiresAt DateTime
   used      Boolean  @default(false)
-  createdAt DateTime @default(now()) @map("created_at")
+  createdAt DateTime @default(now())
+}
 
-  @@index([email])
-  @@map("password_resets")
+model user {
+  id               String     @id
+  name             String
+  email            String     @unique(map: "User_email_key")
+  contactNumber    String?    @unique(map: "User_contactNumber_key")
+  password         String
+  role             String     @default("USER")
+  isVerified       Boolean    @default(false)
+  isActive         Boolean    @default(true)
+  createdAt        DateTime   @default(now())
+  updatedAt        DateTime
+  address          String?
+  fcmToken         String?    @db.Text
+  crmUserId        Int?
+  orderNotifyState String?    @db.LongText
+  document         document[]
+}
+
+model SupportChatHistory {
+  id          BigInt   @id @default(autoincrement())
+  userId      String   @map("user_id")
+  message     String   @db.Text
+  botResponse String   @map("bot_response") @db.Text
+  intent      String?  @db.VarChar(50)
+  createdAt   DateTime @default(now()) @map("created_at") @db.Timestamp(0)
+
+  @@index([userId], map: "support_chat_history_user_id_idx")
+  @@map("support_chat_history")
 }

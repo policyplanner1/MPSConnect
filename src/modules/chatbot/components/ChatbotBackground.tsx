@@ -14,10 +14,12 @@ import Svg, { Circle, Path, Rect } from 'react-native-svg';
 import CallChatbotIcon from '../../../assets/images/icons/Call_chatbot.svg';
 import ChatChatbotIcon from '../../../assets/images/icons/chat_chatbot.svg';
 import MicrophoneIcon from '../../../assets/images/icons/Microphone.svg';
+import { chatbotType } from '../theme/chatbotTypography';
 
 type ChatbotBackgroundProps = ViewProps & {
   children?: React.ReactNode;
   contentContainerStyle?: StyleProp<ViewStyle>;
+  footer?: React.ReactNode;
   onBack?: () => void;
   onCallPress?: () => void;
   onMenuPress?: () => void;
@@ -94,6 +96,7 @@ function CameraIcon() {
 function ChatbotBackground({
   children,
   contentContainerStyle,
+  footer,
   onBack,
   onCallPress,
   onMenuPress,
@@ -144,6 +147,8 @@ function ChatbotBackground({
         <View style={[styles.contentContainer, contentContainerStyle]}>
           {children}
         </View>
+
+        {footer}
 
         <View style={styles.composerWrap}>
           <View style={styles.composerBar}>
@@ -224,9 +229,7 @@ const styles = StyleSheet.create({
     
   },
   avatarText: {
-    fontSize: 13,
-    fontWeight: '700',
-    color: '#6B7280',
+    ...chatbotType.avatarInitial,
   },
   onlineDot: {
     position: 'absolute',
@@ -244,14 +247,11 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   title: {
-    fontSize: 15,
-    fontWeight: '500',
-    color: '#3F3F46',
+    ...chatbotType.headerTitle,
   },
   subtitle: {
+    ...chatbotType.headerSubtitle,
     marginTop: 1,
-    fontSize: 11,
-    color: '#6B7280',
   },
   headerActions: {
     flexDirection: 'row',
@@ -293,9 +293,8 @@ const styles = StyleSheet.create({
     marginRight: 8,
   },
   placeholderText: {
+    ...chatbotType.composerPlaceholder,
     flex: 1,
-    fontSize: 13,
-    color: '#A1A1AA',
   },
   composerRightIcons: {
     flexDirection: 'row',

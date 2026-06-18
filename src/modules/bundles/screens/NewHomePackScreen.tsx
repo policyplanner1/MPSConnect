@@ -11,6 +11,8 @@ import Svg, {
   Path,
 } from 'react-native-svg';
 
+import { inter18 } from '../../../core/theme/typography';
+
 import NewHomePackImage from '../../../assets/images/newhomepack.svg';
 import NhpAadharIcon from '../../../assets/images/bundleservicesicons/nhp-addhar.svg';
 import NhpMsebIcon from '../../../assets/images/bundleservicesicons/nhp-mseb.svg';
@@ -330,7 +332,7 @@ const styles = StyleSheet.create({
   heroTitle: {
     fontSize: 17,
     lineHeight: 18,
-    fontWeight: '600',
+    ...inter18('semiBold'),
     color: '#3E238D',
   },
   bulletGroup: {
@@ -340,7 +342,7 @@ const styles = StyleSheet.create({
   bulletText: {
     fontSize: 13,
     lineHeight: 20,
-    fontWeight: '400',
+    ...inter18('regular'),
     color: '#6D6A73',
   },
   heroShareRow: {
@@ -369,7 +371,7 @@ const styles = StyleSheet.create({
   },
   segmentText: {
     fontSize: 11,
-    fontWeight: '500',
+    ...inter18('medium'),
     color: '#4B4747',
   },
   segmentTextActive: {
@@ -440,7 +442,7 @@ const styles = StyleSheet.create({
   itemTitle: {
     fontSize: 14,
     lineHeight: 20,
-    fontWeight: '600',
+    ...inter18('semiBold'),
     color: '#37323A',
     marginBottom: 4,
   },
@@ -456,7 +458,7 @@ const styles = StyleSheet.create({
   },
   savePillText: {
     fontSize: 11,
-    fontWeight: '700',
+    ...inter18('bold'),
     color: '#A26BE8',
   },
   itemDescription: {
@@ -478,7 +480,7 @@ const styles = StyleSheet.create({
   },
   newPrice: {
     fontSize: 14,
-    fontWeight: '700',
+    ...inter18('bold'),
     color: '#25A545',
   },
   itemDeleteBtn: {
@@ -518,7 +520,7 @@ const styles = StyleSheet.create({
   },
   saveLaterText: {
     fontSize: 12,
-    fontWeight: '700',
+    ...inter18('bold'),
     color: '#3E238D',
   },
   statsRow: {
@@ -538,7 +540,7 @@ const styles = StyleSheet.create({
   },
   statValue: {
     fontSize: 12,
-    fontWeight: '800',
+    ...inter18('bold'),
     color: '#3E238D',
     marginBottom: 3,
     textAlign: 'center',
@@ -565,7 +567,7 @@ const styles = StyleSheet.create({
   },
   addToCartButtonText: {
     fontSize: 13,
-    fontWeight: '700',
+    ...inter18('bold'),
     color: '#7C3FCC',
   },
   cartSummaryWrap: {

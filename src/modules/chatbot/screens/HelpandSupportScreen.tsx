@@ -13,9 +13,12 @@ import GotMarriedIcon from '../../../assets/images/icons/gotmarriedicon.svg';
 import NewHomeIcon from '../../../assets/images/icons/newhome_icon.svg';
 import PassportIcon from '../../../assets/images/icons/passport_gd.svg';
 import WorkIcon from '../../../assets/images/icons/work_icon.svg';
+import SupportModeTabs from '../../services/components/SupportModeTabs';
+import { chatbotType } from '../theme/chatbotTypography';
 
 type HelpandSupportScreenProps = {
   onBack?: () => void;
+  onCreateTicket?: () => void;
   onCategorySelect?: (categoryId: CategoryChipIcon) => void;
   onChatWithUs?: (responseKey?: string) => void;
   onOpenApplicationIssue?: (responseKey?: string) => void;
@@ -173,6 +176,7 @@ function CategoryChip({
 
 function HelpandSupportScreen({
   onBack,
+  onCreateTicket,
   onCategorySelect,
   onChatWithUs,
   onOpenApplicationIssue,
@@ -263,6 +267,10 @@ function HelpandSupportScreen({
             </Pressable>
           </View>
         </View>
+
+        {onCreateTicket ? (
+          <SupportModeTabs active="chat" onChat={() => {}} onTicket={onCreateTicket} />
+        ) : null}
       </View>
     </SafeAreaView>
   );
@@ -292,9 +300,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   headerTitle: {
-    fontSize: 18,
-    fontWeight: '700',
-    color: '#111111',
+    ...chatbotType.helpHeaderTitle,
   },
   headerSpacer: {
     width: 34,
@@ -319,10 +325,8 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
   },
   issueTitle: {
+    ...chatbotType.issueTitle,
     flex: 1,
-    fontSize: 14,
-    fontWeight: '400',
-    color: '#262626',
     paddingRight: 16,
   },
   issueBody: {
@@ -344,10 +348,8 @@ const styles = StyleSheet.create({
     borderBottomColor: '#F3F4F6',
   },
   issueOptionText: {
+    ...chatbotType.issueOption,
     flex: 1,
-    fontSize: 12.5,
-    lineHeight: 18,
-    color: '#262626',
     paddingRight: 10,
   },
   chatLinkButton: {
@@ -358,9 +360,7 @@ const styles = StyleSheet.create({
     borderRadius: 8,
   },
   chatLinkText: {
-    fontSize: 12.5,
-    color: '#6C4DFF',
-    fontWeight: '500',
+    ...chatbotType.issueChatLink,
   },
   bottomArea: {
     marginTop: 'auto',
@@ -393,9 +393,7 @@ const styles = StyleSheet.create({
     marginRight: 6,
   },
   categoryChipText: {
-    fontSize: 11,
-    color: '#7A7A7A',
-    fontWeight: '400',
+    ...chatbotType.categoryChip,
     flexShrink: 1,
   },
   chatCard: {
@@ -419,11 +417,8 @@ const styles = StyleSheet.create({
     elevation: 3,
   },
   chatCopy: {
+    ...chatbotType.helpPrompt,
     flex: 1,
-    fontSize: 12.5,
-    lineHeight: 18,
-    color: '#8A8A8A',
-    fontStyle: 'italic',
     paddingRight: 10,
   },
   chatButton: {
@@ -436,9 +431,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 12,
   },
   chatButtonText: {
-    color: '#FFFFFF',
-    fontSize: 12,
-    fontWeight: '700',
+    ...chatbotType.helpCta,
   },
 });
 

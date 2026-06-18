@@ -15,9 +15,10 @@ import { inter18 } from '../../../core/theme/typography';
 
 type NotificationScreenProps = {
   onBack?: () => void;
+  onOpenOrder?: (parentOrderId: string) => void;
 };
 
-function NotificationScreen({ onBack }: NotificationScreenProps) {
+function NotificationScreen({ onBack, onOpenOrder }: NotificationScreenProps) {
   const { notifications, loading, cycleFilter } = useNotifications();
 
   return (
@@ -49,6 +50,12 @@ function NotificationScreen({ onBack }: NotificationScreenProps) {
                   timestamp={item.timestamp}
                   title={item.title}
                   variant={item.variant}
+                  onPress={() => {
+                    const data = item.data ?? {};
+                    if (data.type === 'order_status' && typeof data.parent_order_id === 'string') {
+                      onOpenOrder?.(data.parent_order_id);
+                    }
+                  }}
                 />
               ))
             )}

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import {
   ActivityIndicator,
   Image,
@@ -12,6 +12,9 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Svg, { Path } from 'react-native-svg';
 
+import TravelInsuranceIcon from '../../../assets/images/bundleservicesicons/travel-insurance.svg';
+import TravelInsuranceStack from '../../TravelInsurance/navigation/TravelInsuranceStack';
+import { inter18 } from '../../../core/theme/typography';
 import { useGovernmentServices } from '../hooks/useServices';
 import { Service } from '../types/service.types';
 
@@ -22,6 +25,8 @@ type Props = {
   onBack: () => void;
   onServicePress: (serviceId: number, service: Service) => void;
   categoryId?: number;
+  /** Opens this service on the detail screen once the category list has loaded. */
+  initialServiceId?: number;
 };
 
 /* ─── Icons ─────────────────────────────────────────────── */
@@ -96,13 +101,13 @@ function HeroBanner({ onBack, categoryId = 3 }: { onBack: () => void; categoryId
 
       <View style={styles.bannerBody}>
         <View style={styles.bannerLeft}>
-          <Text style={styles.bannerTitle}>{content.title}</Text>
-          <Text style={styles.bannerSub}>{content.sub}</Text>
+          <Text style={[styles.bannerTitle, inter18('bold')]}>{content.title}</Text>
+          <Text style={[styles.bannerSub, inter18('regular')]}>{content.sub}</Text>
           <View style={styles.bullets}>
             {content.bullets.map(t => (
               <View key={t} style={styles.bulletRow}>
                 <View style={styles.bulletDot} />
-                <Text style={styles.bulletText}>{t}</Text>
+                <Text style={[styles.bulletText, inter18('regular')]}>{t}</Text>
               </View>
             ))}
           </View>
@@ -147,6 +152,44 @@ function ActiveCard({ service }: { service: Service }) {
   );
 }
 
+function isTravelInsuranceService(service: Service): boolean {
+  return service.name.toLowerCase().includes('travel');
+}
+
+/* ─── Travel insurance card ─────────────────────────────── */
+
+function TravelInsuranceCard({ onGetQuote }: { onGetQuote: () => void }) {
+  const [liked, setLiked] = useState(false);
+
+  return (
+    <View style={[styles.serviceCard, styles.travelServiceCard]}>
+      <View style={styles.cardImgBox}>
+        <TravelInsuranceIcon height={72} width={72} />
+        <Pressable
+          hitSlop={8}
+          onPress={() => setLiked(v => !v)}
+          style={styles.heartBtn}>
+          <HeartIcon filled={liked} />
+        </Pressable>
+      </View>
+
+      <View style={styles.cardRightTravel}>
+        <View style={styles.cardTextBlock}>
+          <Text style={[styles.cardName, inter18('bold')]}>Travel Insurance</Text>
+          <Text numberOfLines={2} style={[styles.cardDescTravel, inter18('regular')]}>
+            Travel with confidence knowing you're protected wherever you go.
+          </Text>
+        </View>
+        <Pressable
+          onPress={onGetQuote}
+          style={({ pressed }) => [styles.buyBtn, pressed && styles.buyBtnPressed]}>
+          <Text style={[styles.buyBtnText, inter18('bold')]}>Get a Quote</Text>
+        </Pressable>
+      </View>
+    </View>
+  );
+}
+
 /* ─── Vertical service card ─────────────────────────────── */
 
 function ServiceCard({ item, onPress, buttonLabel = 'Buy now' }: { item: Service; onPress: () => void; buttonLabel?: string }) {
@@ -171,12 +214,12 @@ function ServiceCard({ item, onPress, buttonLabel = 'Buy now' }: { item: Service
 
       {/* Right — name, desc, button */}
       <View style={styles.cardRight}>
-        <Text style={styles.cardName}>{item.name}</Text>
-        <Text style={styles.cardDesc} numberOfLines={3}>{item.description}</Text>
+        <Text style={[styles.cardName, inter18('bold')]}>{item.name}</Text>
+        <Text numberOfLines={3} style={[styles.cardDesc, inter18('regular')]}>{item.description}</Text>
         <Pressable
           onPress={onPress}
           style={({ pressed }) => [styles.buyBtn, pressed && styles.buyBtnPressed]}>
-          <Text style={styles.buyBtnText}>{buttonLabel}</Text>
+          <Text style={[styles.buyBtnText, inter18('bold')]}>{buttonLabel}</Text>
         </Pressable>
       </View>
     </View>
@@ -197,8 +240,8 @@ function StatsRow() {
         <React.Fragment key={s.num}>
           {i > 0 && <View style={styles.statDivider} />}
           <View style={styles.statItem}>
-            <Text style={styles.statNum}>{s.num}</Text>
-            <Text style={styles.statLabel}>{s.label}</Text>
+            <Text style={[styles.statNum, inter18('bold')]}>{s.num}</Text>
+            <Text style={[styles.statLabel, inter18('regular')]}>{s.label}</Text>
           </View>
         </React.Fragment>
       ))}
@@ -216,18 +259,18 @@ function HelpSection() {
       style={styles.helpWrap}
       imageStyle={styles.helpBgImage}
       resizeMode="cover">
-      <Text style={styles.helpTitle}>Need a little help with Insurance?</Text>
-      <Text style={styles.helpSub}>
+      <Text style={[styles.helpTitle, inter18('bold')]}>Need a little help with Insurance?</Text>
+      <Text style={[styles.helpSub, inter18('regular')]}>
         Not sure what to choose or where to start?{'\n'}
         Talk to our team we'll walk you through it, step by step.
       </Text>
       <Image source={HeartImg} style={styles.helpImg} resizeMode="contain" />
       <View style={styles.helpBottom}>
         <View style={styles.phoneBox}>
-          <Text style={styles.phoneText}>+91 7798 612243</Text>
+          <Text style={[styles.phoneText, inter18('semiBold')]}>+91 7798 612243</Text>
         </View>
         <Pressable style={styles.talkBtn}>
-          <Text style={styles.talkBtnText}>Talk To Us</Text>
+          <Text style={[styles.talkBtnText, inter18('bold')]}>Talk To Us</Text>
         </Pressable>
       </View>
     </ImageBackground>
@@ -236,8 +279,48 @@ function HelpSection() {
 
 /* ─── Screen ─────────────────────────────────────────────── */
 
-function ServiceListScreen({ onBack, onServicePress, categoryId = 3 }: Props) {
+function ServiceListScreen({
+  onBack,
+  onServicePress,
+  categoryId = 3,
+  initialServiceId,
+}: Props) {
   const { services, loading } = useGovernmentServices(categoryId);
+  const didAutoOpenRef = useRef(false);
+  const [travelInsuranceOpen, setTravelInsuranceOpen] = useState(false);
+
+  const listedServices = useMemo(
+    () =>
+      categoryId === 2 ? services.filter(service => !isTravelInsuranceService(service)) : services,
+    [categoryId, services],
+  );
+
+  useEffect(() => {
+    if (!initialServiceId || loading || didAutoOpenRef.current) {
+      return;
+    }
+
+    const match = services.find(service => service.id === initialServiceId);
+    didAutoOpenRef.current = true;
+
+    if (match) {
+      onServicePress(match.id, match);
+      return;
+    }
+
+    onServicePress(initialServiceId, {
+      id: initialServiceId,
+      name: '',
+      description: '',
+      price: '',
+      estimated_days: 0,
+      service_image: '',
+    });
+  }, [initialServiceId, loading, onServicePress, services]);
+
+  if (travelInsuranceOpen) {
+    return <TravelInsuranceStack onBack={() => setTravelInsuranceOpen(false)} />;
+  }
 
   return (
     <SafeAreaView edges={['top']} style={styles.safe}>
@@ -268,14 +351,19 @@ function ServiceListScreen({ onBack, onServicePress, categoryId = 3 }: Props) {
               style={{ marginVertical: 40 }}
             />
           ) : (
-            services.map(s => (
-              <ServiceCard
-                key={s.id}
-                item={s}
-                onPress={() => onServicePress(s.id, s)}
-                buttonLabel={categoryId === 2 ? 'Get a Quote' : 'Buy now'}
-              />
-            ))
+            <>
+              {categoryId === 2 ? (
+                <TravelInsuranceCard onGetQuote={() => setTravelInsuranceOpen(true)} />
+              ) : null}
+              {listedServices.map(s => (
+                <ServiceCard
+                  key={s.id}
+                  item={s}
+                  onPress={() => onServicePress(s.id, s)}
+                  buttonLabel={categoryId === 2 ? 'Get a Quote' : 'Buy now'}
+                />
+              ))}
+            </>
           )}
         </View>
 
@@ -325,7 +413,6 @@ const styles = StyleSheet.create({
   },
   bannerTitle: {
     fontSize: 23,
-    fontWeight: '800',
     color: '#14532D',
     lineHeight: 30,
     marginBottom: 6,
@@ -469,6 +556,10 @@ const styles = StyleSheet.create({
     shadowRadius: 6,
     elevation: 3,
   },
+  travelServiceCard: {
+    alignItems: 'stretch',
+    paddingBottom: 14,
+  },
   cardImgBox: {
     width: 120,
     borderRadius: 14,
@@ -501,11 +592,20 @@ const styles = StyleSheet.create({
   },
   cardRight: {
     flex: 1,
+    minWidth: 0,
     justifyContent: 'space-between',
+  },
+  cardRightTravel: {
+    flex: 1,
+    minWidth: 0,
+    justifyContent: 'space-between',
+    paddingVertical: 2,
+  },
+  cardTextBlock: {
+    flexShrink: 1,
   },
   cardName: {
     fontSize: 16,
-    fontWeight: '700',
     color: '#111111',
     lineHeight: 22,
     marginBottom: 6,
@@ -517,11 +617,20 @@ const styles = StyleSheet.create({
     flex: 1,
     marginBottom: 12,
   },
+  cardDescTravel: {
+    fontSize: 13,
+    color: '#666666',
+    lineHeight: 19,
+    marginBottom: 10,
+  },
   buyBtn: {
     backgroundColor: '#6B21A8',
     borderRadius: 10,
     paddingVertical: 12,
     alignItems: 'center',
+    justifyContent: 'center',
+    minHeight: 44,
+    alignSelf: 'stretch',
   },
   buyBtnPressed: {
     opacity: 0.82,
@@ -529,7 +638,6 @@ const styles = StyleSheet.create({
   buyBtnText: {
     color: '#FFFFFF',
     fontSize: 14,
-    fontWeight: '700',
   },
 
   /* Stats */
@@ -547,7 +655,6 @@ const styles = StyleSheet.create({
   },
   statNum: {
     fontSize: 15,
-    fontWeight: '800',
     color: '#1E1E1E',
     marginBottom: 5,
   },
@@ -577,7 +684,6 @@ const styles = StyleSheet.create({
   },
   helpTitle: {
     fontSize: 18,
-    fontWeight: '700',
     color: '#1A1A2E',
     textAlign: 'center',
     marginBottom: 10,
@@ -613,7 +719,6 @@ const styles = StyleSheet.create({
   phoneText: {
     color: '#1A1A2E',
     fontSize: 13,
-    fontWeight: '600',
   },
   talkBtn: {
     backgroundColor: '#F5C518',
@@ -626,7 +731,6 @@ const styles = StyleSheet.create({
   talkBtnText: {
     color: '#111111',
     fontSize: 13,
-    fontWeight: '700',
   },
 });
 

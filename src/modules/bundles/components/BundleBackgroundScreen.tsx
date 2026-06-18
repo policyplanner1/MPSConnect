@@ -11,6 +11,8 @@ import {
 } from 'react-native';
 import Svg, { Path } from 'react-native-svg';
 
+import { inter18 } from '../../../core/theme/typography';
+
 type BundleBackgroundScreenProps = {
   children?: React.ReactNode;
   contentContainerStyle?: StyleProp<ViewStyle>;
@@ -120,7 +122,7 @@ const styles = StyleSheet.create({
   title: {
     fontSize: 14,
     lineHeight: 20,
-    fontWeight: '600',
+    ...inter18('semiBold'),
     color: '#3F3A37',
   },
   headerRightWrap: {

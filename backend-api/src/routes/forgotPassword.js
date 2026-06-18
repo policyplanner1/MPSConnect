@@ -2,7 +2,10 @@ const express = require("express");
 const bcrypt = require("bcryptjs");
 const { z } = require("zod");
 const prisma = require("../config/prisma");
-const { sendOtpEmail } = require("../services/email.service");
+const {
+  sendOtpEmail,
+  isEmailConfigured,
+} = require("../services/email.service");
 
 const router = express.Router();
 
@@ -75,11 +78,36 @@ async function handleSendOtp(req, res) {
       },
     });
 
-    await sendOtpEmail({ to: normalizedEmail, otp });
+    let emailResult;
+    try {
+      emailResult = await sendOtpEmail({ to: normalizedEmail, otp });
+    } catch (emailError) {
+      console.error("[forgot-password/email]", emailError);
+      return res.status(500).json({
+        success: false,
+        message:
+          "Could not send verification email. Check SMTP settings on the server.",
+      });
+    }
+
+    if (!emailResult.sent && isEmailConfigured()) {
+      return res.status(500).json({
+        success: false,
+        message: "Could not send verification email. Please try again later.",
+      });
+    }
+
+    if (!emailResult.sent) {
+      console.warn(
+        "[forgot-password] SMTP not configured — OTP logged in server console only",
+      );
+    }
 
     return res.json({
       success: true,
-      message: "A 4-digit verification code has been sent to your email",
+      message: emailResult.sent
+        ? "A 4-digit verification code has been sent to your email"
+        : "Verification code created (email not configured on server — check server logs in dev)",
       data: {
         email: normalizedEmail,
         expiresInMinutes: OTP_EXPIRY_MINUTES,

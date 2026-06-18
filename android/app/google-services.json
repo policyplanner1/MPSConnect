@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "282871683959",
+    "project_id": "mpsconnect-294b6",
+    "storage_bucket": "mpsconnect-294b6.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:282871683959:android:bb157d397863f1eba89f72",
+        "android_client_info": {
+          "package_name": "com.mpsconnect"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyA93DRR_EWAYkMEUT8rxLN0cRqwDVKKBDQ"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

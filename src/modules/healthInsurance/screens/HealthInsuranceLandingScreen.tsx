@@ -10,6 +10,8 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Svg, { Path } from 'react-native-svg';
 
+import { inter18 } from '../../../core/theme/typography';
+
 const SERVICE_IMAGE =
   'https://cdn.rewardplanners.com/public/services/12/service-1778820937088-kwgpdn.png';
 
@@ -150,7 +152,7 @@ const styles = StyleSheet.create({
     flex: 1,
     textAlign: 'center',
     fontSize: 17,
-    fontWeight: '700',
+    ...inter18('bold'),
     color: '#14532D',
   },
   headerSpacer: { width: 34 },
@@ -166,14 +168,14 @@ const styles = StyleSheet.create({
   heroTextWrap: { flex: 1, paddingRight: 8 },
   heroTag: {
     fontSize: 10,
-    fontWeight: '700',
+    ...inter18('bold'),
     color: '#2D6A4F',
     letterSpacing: 1.5,
     marginBottom: 6,
   },
   heroTitle: {
     fontSize: 30,
-    fontWeight: '800',
+    ...inter18('bold'),
     color: '#14532D',
     lineHeight: 36,
     marginBottom: 8,
@@ -185,7 +187,7 @@ const styles = StyleSheet.create({
     marginBottom: 12,
   },
   heroPrice: { fontSize: 13, color: '#555555' },
-  heroPriceVal: { fontWeight: '700', color: '#14532D' },
+  heroPriceVal: { color: '#14532D', ...inter18('bold') },
   heroImg: { width: 120, height: 120 },
 
   actionRow: {
@@ -210,12 +212,12 @@ const styles = StyleSheet.create({
   },
   actionBtnOutlineText: {
     color: '#14532D',
-    fontWeight: '700',
+    ...inter18('bold'),
     fontSize: 14,
   },
   actionBtnFillText: {
     color: '#FFFFFF',
-    fontWeight: '700',
+    ...inter18('bold'),
     fontSize: 14,
   },
   pressed: { opacity: 0.8 },
@@ -228,7 +230,7 @@ const styles = StyleSheet.create({
   },
   sectionTitle: {
     fontSize: 16,
-    fontWeight: '700',
+    ...inter18('bold'),
     color: '#111111',
     marginBottom: 16,
   },
@@ -249,7 +251,7 @@ const styles = StyleSheet.create({
   featureIcon: { fontSize: 22, marginBottom: 8 },
   featureLabel: {
     fontSize: 13,
-    fontWeight: '700',
+    ...inter18('bold'),
     color: '#111111',
     marginBottom: 4,
   },
@@ -279,7 +281,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginBottom: 32,
   },
-  ctaText: { color: '#FFFFFF', fontWeight: '700', fontSize: 15 },
+  ctaText: { color: '#FFFFFF', fontSize: 15, ...inter18('bold') },
 });
 
 export default HealthInsuranceLandingScreen;

@@ -1,6 +1,6 @@
 import axios from 'axios';
-import { API_BASE_URL } from '../core/api/api.config';
-import API from '../core/api/axiosClient';
+import { AUTH_API_BASE_URL } from '../config/env';
+import authApi from '../core/api/authAxiosClient';
 
 export type SignupPayload = {
   name: string;
@@ -40,10 +40,20 @@ export type SignupUserData = {
   email: string;
 };
 
+export type UserProfile = {
+  id: string;
+  name: string;
+  email: string;
+  contactNumber: string;
+  role: string;
+  isVerified?: boolean;
+  isActive?: boolean;
+};
+
 export const signupUser = async (
   data: SignupPayload,
 ): Promise<AuthApiResponse<SignupUserData>> => {
-  const response = await API.post<AuthApiResponse<SignupUserData>>(
+  const response = await authApi.post<AuthApiResponse<SignupUserData>>(
     '/auth/signup',
     data,
   );
@@ -51,8 +61,16 @@ export const signupUser = async (
 };
 
 export const loginUser = async (data: LoginPayload): Promise<LoginResponse> => {
-  const response = await API.post<LoginResponse>('/auth/login', data);
+  const response = await authApi.post<LoginResponse>('/auth/login', data);
   return response.data;
+};
+
+export const getCurrentUser = async (): Promise<UserProfile> => {
+  const response = await authApi.get<AuthApiResponse<UserProfile>>('/auth/me');
+  if (!response.data.success || !response.data.data) {
+    throw new Error(response.data.message || 'Could not load profile.');
+  }
+  return response.data.data;
 };
 
 export type ForgotPasswordPayload = {
@@ -73,7 +91,7 @@ export type ResetPasswordPayload = {
 export const requestForgotPassword = async (
   data: ForgotPasswordPayload,
 ): Promise<AuthApiResponse<{ email: string; expiresInMinutes: number }>> => {
-  const response = await API.post<
+  const response = await authApi.post<
     AuthApiResponse<{ email: string; expiresInMinutes: number }>
   >('/auth/forgot-password', data);
   return response.data;
@@ -82,7 +100,7 @@ export const requestForgotPassword = async (
 export const resendForgotPasswordOtp = async (
   data: ForgotPasswordPayload,
 ): Promise<AuthApiResponse<{ email: string; expiresInMinutes: number }>> => {
-  const response = await API.post<
+  const response = await authApi.post<
     AuthApiResponse<{ email: string; expiresInMinutes: number }>
   >('/auth/resend-otp', data);
   return response.data;
@@ -91,7 +109,7 @@ export const resendForgotPasswordOtp = async (
 export const verifyForgotPasswordOtp = async (
   data: VerifyOtpPayload,
 ): Promise<AuthApiResponse<{ email: string }>> => {
-  const response = await API.post<AuthApiResponse<{ email: string }>>(
+  const response = await authApi.post<AuthApiResponse<{ email: string }>>(
     '/auth/verify-otp',
     data,
   );
@@ -101,7 +119,7 @@ export const verifyForgotPasswordOtp = async (
 export const resetPasswordWithOtp = async (
   data: ResetPasswordPayload,
 ): Promise<AuthApiResponse> => {
-  const response = await API.post<AuthApiResponse>('/auth/reset-password', data);
+  const response = await authApi.post<AuthApiResponse>('/auth/reset-password', data);
   return response.data;
 };
 
@@ -117,13 +135,13 @@ export function getAuthErrorMessage(error: unknown): string {
         return [
           'Cannot reach the API server.',
           '',
-          `Trying: ${API_BASE_URL}`,
+          `Trying: ${AUTH_API_BASE_URL}`,
           '',
           '• Backend running? cd backend-api && npm run dev',
           '• Phone on same Wi‑Fi as PC',
           '• Windows: allow inbound TCP 5000 (Firewall)',
-          '• Physical device: DEV_MACHINE_HOST in api.config.ts = PC IPv4',
-          '• Android emulator: set DEV_MACHINE_HOST to "" (uses 10.0.2.2)',
+          '• Physical device: set AUTH_API_BASE_URL in .env to http://<YOUR-PC-IP>:5000/api/v1 (not localhost)',
+          '• Android emulator: AUTH_API_BASE_URL=http://10.0.2.2:5000/api/v1',
           '• Rebuild app after native changes (npx react-native run-android)',
         ].join('\n');
       }

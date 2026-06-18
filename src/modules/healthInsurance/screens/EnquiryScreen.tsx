@@ -13,6 +13,8 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Svg, { Path } from 'react-native-svg';
 
+import { inter18 } from '../../../core/theme/typography';
+
 import { EnquiryFormData } from '../navigation/HealthInsuranceStack';
 
 const COVER_OPTIONS = [
@@ -671,7 +673,7 @@ const styles = StyleSheet.create({
     flex: 1,
     textAlign: 'center',
     fontSize: 17,
-    fontWeight: '700',
+    ...inter18('bold'),
     color: '#14532D',
   },
   headerSpacer: { width: 34 },
@@ -713,14 +715,14 @@ const styles = StyleSheet.create({
     backgroundColor: '#22C55E',
     borderColor: '#22C55E',
   },
-  stepNum: { fontSize: 13, fontWeight: '700', color: '#9CA3AF' },
+  stepNum: { fontSize: 13, color: '#9CA3AF', ...inter18('bold') },
   stepNumActive: { color: '#FFFFFF' },
-  stepLabel: { fontSize: 11, color: '#9CA3AF', fontWeight: '500' },
-  stepLabelActive: { color: '#6B21A8', fontWeight: '700' },
+  stepLabel: { fontSize: 11, color: '#9CA3AF', ...inter18('medium') },
+  stepLabelActive: { color: '#6B21A8', ...inter18('bold') },
 
   formHeading: {
     fontSize: 20,
-    fontWeight: '800',
+    ...inter18('bold'),
     color: '#111111',
     marginBottom: 6,
   },
@@ -764,7 +766,7 @@ const styles = StyleSheet.create({
   memberInfo: { flex: 1 },
   memberLabel: {
     fontSize: 15,
-    fontWeight: '700',
+    ...inter18('bold'),
     color: '#111111',
     marginBottom: 2,
   },
@@ -785,8 +787,8 @@ const styles = StyleSheet.create({
   childrenInfo: { flex: 1 },
   childrenLabel: {
     fontSize: 15,
-    fontWeight: '700',
     color: '#111111',
+    ...inter18('bold'),
     marginBottom: 2,
   },
   childrenSub: { fontSize: 12, color: '#888888' },
@@ -804,13 +806,13 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   counterBtnDisabled: { backgroundColor: '#E5E7EB' },
-  counterBtnText: { fontSize: 20, color: '#FFFFFF', lineHeight: 24, fontWeight: '600' },
+  counterBtnText: { fontSize: 20, color: '#FFFFFF', lineHeight: 24, ...inter18('semiBold') },
   counterBtnTextDisabled: { color: '#9CA3AF' },
   counterVal: {
     width: 32,
     textAlign: 'center',
     fontSize: 18,
-    fontWeight: '700',
+    ...inter18('bold'),
     color: '#111111',
   },
 
@@ -818,7 +820,7 @@ const styles = StyleSheet.create({
   fieldWrap: { marginBottom: 16 },
   label: {
     fontSize: 13,
-    fontWeight: '600',
+    ...inter18('semiBold'),
     color: '#374151',
     marginBottom: 8,
   },
@@ -876,7 +878,7 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1,
     borderBottomColor: '#F3F4F6',
   },
-  modalTitle: { fontSize: 16, fontWeight: '700', color: '#111111' },
+  modalTitle: { fontSize: 16, color: '#111111', ...inter18('bold') },
   modalList: { paddingHorizontal: 20 },
   optionRow: {
     flexDirection: 'row',
@@ -887,7 +889,7 @@ const styles = StyleSheet.create({
   optionRowBorder: { borderBottomWidth: 1, borderBottomColor: '#F3F4F6' },
   optionRowActive: { backgroundColor: 'transparent' },
   optionText: { fontSize: 15, color: '#374151' },
-  optionTextActive: { color: '#6B21A8', fontWeight: '700' },
+  optionTextActive: { color: '#6B21A8', ...inter18('bold') },
 
   /* Next / Submit button */
   nextBtn: {
@@ -897,7 +899,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginTop: 12,
   },
-  nextBtnText: { color: '#FFFFFF', fontWeight: '700', fontSize: 16 },
+  nextBtnText: { color: '#FFFFFF', fontSize: 16, ...inter18('bold') },
   pressed: { opacity: 0.82 },
 });
 

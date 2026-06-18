@@ -7,6 +7,11 @@ const {
   signupSchema,
   loginSchema,
 } = require("./auth.validation");
+const { sendWelcomeEmail } = require("../../services/email.service");
+
+function getJwtSecret() {
+  return String(process.env.JWT_SECRET || "").trim();
+}
 
 /*
 |--------------------------------------------------------------------------
@@ -81,9 +86,24 @@ const signup = async (req, res) => {
       },
     });
 
+    try {
+      const emailResult = await sendWelcomeEmail({
+        to: normalizedEmail,
+        name: user.name,
+      });
+      if (!emailResult.sent) {
+        console.warn(
+          "[signup] Welcome email not sent (configure EMAIL_* or SMTP_* in backend .env)",
+        );
+      }
+    } catch (emailError) {
+      console.error("[signup/welcome-email]", emailError);
+    }
+
     return res.status(201).json({
       success: true,
-      message: "Signup successful",
+      message:
+        "Signup successful. Check your email for a welcome message.",
 
       data: {
         id: user.id,
@@ -191,7 +211,7 @@ const login = async (req, res) => {
         role: user.role,
       },
 
-      process.env.JWT_SECRET,
+      getJwtSecret(),
 
       {
         expiresIn: "7d",

@@ -9,6 +9,8 @@ import {
   ViewStyle,
 } from 'react-native';
 
+import { chatbotType } from '../theme/chatbotTypography';
+
 type ChatbotButtonProps = PressableProps & {
   label: string;
   textStyle?: StyleProp<TextStyle>;
@@ -56,11 +58,7 @@ const styles = StyleSheet.create({
     opacity: 0.9,
   },
   label: {
-    fontSize: 13,
-    lineHeight: 18,
-    fontWeight: '400',
-    color: '#4A4A4A',
-    textAlign: 'center',
+    ...chatbotType.actionButton,
   },
 });
 

@@ -19,9 +19,10 @@ export type ChatbotScreenName =
 
 type ChatbotStackProps = {
   onClose?: () => void;
+  onCreateTicket?: () => void;
 };
 
-function ChatbotStack({ onClose }: ChatbotStackProps) {
+function ChatbotStack({ onClose, onCreateTicket }: ChatbotStackProps) {
   const [currentScreen, setCurrentScreen] =
     useState<ChatbotScreenName>('HelpAndSupport');
   const [responseKey, setResponseKey] = useState('application_stuck_in_processing');
@@ -30,6 +31,7 @@ function ChatbotStack({ onClose }: ChatbotStackProps) {
     return (
       <ASPScreen
         onBack={() => setCurrentScreen('HelpAndSupport')}
+        onCreateTicket={onCreateTicket}
         responseKey={responseKey}
       />
     );
@@ -59,6 +61,7 @@ function ChatbotStack({ onClose }: ChatbotStackProps) {
     return (
       <HelpandSupportScreen
         onBack={onClose}
+        onCreateTicket={onCreateTicket}
         onCategorySelect={categoryId => {
           if (categoryId === 'house') {
             setCurrentScreen('NewHomePack');

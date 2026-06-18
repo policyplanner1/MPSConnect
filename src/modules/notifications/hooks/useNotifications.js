@@ -1,19 +1,21 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 
-import { fetchNotifications } from '../services/notification.service';
 import {
+  addStoredNotification,
   filterNotifications,
+  loadStoredNotifications,
   nextNotificationFilter,
 } from '../store/notificationStore';
 
 /**
  * @returns {{
- *   notifications: import('../services/notification.service').AppNotification[];
+ *   notifications: import('../store/notificationStore').AppNotification[];
  *   loading: boolean;
  *   filter: import('../store/notificationStore').NotificationFilter;
  *   cycleFilter: () => void;
  *   refresh: () => Promise<void>;
  *   unreadCount: number;
+ *   seedMock?: () => Promise<void>;
  * }}
  */
 export function useNotifications() {
@@ -26,7 +28,7 @@ export function useNotifications() {
   const load = useCallback(async () => {
     setLoading(true);
     try {
-      const items = await fetchNotifications();
+      const items = await loadStoredNotifications();
       setNotifications(items);
     } finally {
       setLoading(false);
@@ -58,5 +60,19 @@ export function useNotifications() {
     cycleFilter,
     refresh: load,
     unreadCount,
+    // Optional: keep for dev testing; can be removed later.
+    seedMock: async () => {
+      const { MOCK_NOTIFICATIONS } = await import('../services/notification.service');
+      for (const item of MOCK_NOTIFICATIONS) {
+        await addStoredNotification({
+          title: item.title,
+          body: item.body,
+          variant: item.variant,
+          thumbnail: item.thumbnail ?? null,
+          data: {},
+        });
+      }
+      await load();
+    },
   };
 }

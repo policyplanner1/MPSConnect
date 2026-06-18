@@ -1,12 +1,14 @@
 import React from 'react';
 import {
   ActivityIndicator,
+  Dimensions,
   Image,
   Pressable,
   ScrollView,
   StyleSheet,
   Text,
   View,
+  
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Svg, {
@@ -19,23 +21,60 @@ import Svg, {
 import InsuranceCardIcon from '../../../assets/images/icons/insurance.svg';
 import TaxCardIcon from '../../../assets/images/icons/tax_s.svg';
 import MutualFundCardIcon from '../../../assets/images/icons/mutual_fund.svg';
+import { inter18 } from '../../../core/theme/typography';
 import { IMAGE_BASE_URL } from '../../../config/env';
+import { ExploreScreen, type ExploreServiceItem } from '../../explore';
+import HealthInsuranceStack from '../../healthInsurance/navigation/HealthInsuranceStack';
+import AutoMarqueeScroll from '../components/AutoMarqueeScroll';
+import HomeHeroHeader from '../components/HomeHeroHeader';
+import ServicesBottomTabBar, {
+  type ServicesMainTab,
+} from '../components/ServicesBottomTabBar';
+import { useServiceCart } from '../hooks/useServiceCart';
 import { useGovernmentServices } from '../hooks/useServices';
-
-import BottomHomeIcon from '../../../assets/images/icons/home_icon.svg';
-import BottomRequestsIcon from '../../../assets/images/icons/shopping-bag.svg';
-import BottomExploreIcon from '../../../assets/images/icons/navigation_icon.svg';
-import BottomMoreIcon from '../../../assets/images/icons/bizz_logo.svg';
+import { useMyOrders } from '../hooks/useMyOrders';
+import { useUserProfile } from '../hooks/useUserProfile';
+import MyRequestsScreen from './MyRequestsScreen';
 
 type HomeScreenProps = {
   onGetStarted?: () => void;
   onOpenNotifications?: () => void;
+  onOpenCart?: () => void;
   onOpenRewards?: () => void;
+  onOpenCalculators?: () => void;
+  onOpenProfile?: () => void;
   onLogout?: () => void;
   onServicePress?: (serviceId: number) => void;
+  onOpenService?: (serviceId: number) => void;
   onGovernmentDocuments?: () => void;
   onInsurancePress?: () => void;
+  initialRequestsParentOrderId?: string;
 };
+
+function CalculatorTileIcon({ width = 42, height = 42, color }: SvgProps) {
+  const size = Math.min(Number(width) || 42, Number(height) || 42);
+  const strokeColor = typeof color === 'string' ? color : '#555555';
+  return (
+    <Svg height={size} viewBox="0 0 24 24" width={size}>
+      <Rect
+        fill="none"
+        height="16"
+        rx="2"
+        stroke={strokeColor}
+        strokeWidth="1.6"
+        width="18"
+        x="3"
+        y="4"
+      />
+      <Path
+        d="M7 8H10M7 11H10M7 14H10M13 8H17M13 11H17M13 14H15"
+        stroke={strokeColor}
+        strokeLinecap="round"
+        strokeWidth="1.6"
+      />
+    </Svg>
+  );
+}
 
 type SvgIconType = React.FC<SvgProps>;
 
@@ -103,6 +142,7 @@ function SectionCard({
   title,
   children,
   compact = false,
+  flat = false,
   rightChevron = false,
   blueHeader = false,
   onHeaderPress,
@@ -110,18 +150,23 @@ function SectionCard({
   title?: string;
   children: React.ReactNode;
   compact?: boolean;
+  flat?: boolean;
   rightChevron?: boolean;
   blueHeader?: boolean;
   onHeaderPress?: () => void;
 }) {
   return (
-    <View style={[styles.card, compact ? styles.compactCard : undefined]}>
+    <View style={[styles.card, compact ? styles.compactCard : undefined, flat ? styles.flatCard : undefined]}>
       {title ? (
         <Pressable
           onPress={onHeaderPress}
           disabled={!onHeaderPress}
-          style={[styles.cardHeader, blueHeader ? styles.blueCardHeader : undefined]}>
-          <Text style={styles.cardTitle}>{title}</Text>
+          style={[
+            styles.cardHeader,
+            blueHeader ? styles.blueCardHeader : undefined,
+            flat ? styles.flatCardHeader : undefined,
+          ]}>
+          <Text style={[styles.cardTitle, inter18('bold')]}>{title}</Text>
           {rightChevron ? <Icon kind="chevron" color="#111111" size={22} /> : null}
         </Pressable>
       ) : null}
@@ -130,30 +175,76 @@ function SectionCard({
   );
 }
 
+function resolveServiceImage(uri: string | null | undefined): string | null {
+  if (!uri || typeof uri !== 'string') {
+    return null;
+  }
+  const trimmed = uri.trim();
+  if (!trimmed) {
+    return null;
+  }
+  if (trimmed.startsWith('http')) {
+    return trimmed;
+  }
+  const base = (IMAGE_BASE_URL ?? '').replace(/\/+$/, '');
+  if (!base) {
+    return trimmed;
+  }
+  return `${base}/${trimmed.replace(/^\//, '')}`;
+}
+
+function formatMoney(amount: number): string {
+  try {
+    return new Intl.NumberFormat('en-IN', {
+      style: 'currency',
+      currency: 'INR',
+      maximumFractionDigits: 0,
+    }).format(amount);
+  } catch {
+    return `₹${Math.round(amount)}`;
+  }
+}
+
+function isActiveOrder(statusRaw: string): boolean {
+  const s = String(statusRaw || '').toLowerCase();
+  // Treat these as "done" or "not actionable" in "Active Requests".
+  if (s.includes('paid') || s === 'completed' || s === 'success') {
+    return false;
+  }
+  if (s.includes('cancel') || s.includes('fail') || s.includes('reject')) {
+    return false;
+  }
+  return true;
+}
+
 function QuickService({
   imageUri,
   label,
   onPress,
 }: {
-  imageUri: string;
+  imageUri: string | null;
   label: string;
   onPress?: () => void;
 }) {
   return (
     <Pressable onPress={onPress} style={styles.quickItem}>
-      <View style={styles.quickIconWrap}>
-        <Image
-          source={{ uri: imageUri }}
-          style={styles.quickServiceImage}
-          resizeMode="contain"
-        />
+      <View style={styles.quickIconCard}>
+        {imageUri ? (
+          <Image
+            source={{ uri: imageUri }}
+            style={styles.quickServiceImage}
+            resizeMode="contain"
+          />
+        ) : (
+          <View style={styles.quickIconPlaceholder} />
+        )}
       </View>
-      <Text numberOfLines={2} style={styles.quickLabel}>{label}</Text>
+      <Text numberOfLines={2} style={[styles.quickLabel, inter18('medium')]}>{label}</Text>
     </Pressable>
   );
 }
 
-function SmallCategory({
+function FinancialServiceCard({
   IconComponent,
   label,
   onPress,
@@ -165,181 +256,356 @@ function SmallCategory({
   return (
     <Pressable
       onPress={onPress}
-      style={({ pressed }) => [styles.smallCategory, pressed && { opacity: 0.75 }]}>
-      <Text style={styles.smallCategoryLabel}>{label}</Text>
-      <View style={styles.smallIconWrap}>
-        <IconComponent width={42} height={42} />
+      style={({ pressed }) => [styles.financialCard, pressed && { opacity: 0.88 }]}>
+      <View style={styles.financialIconWrap}>
+        <IconComponent width={46} height={46} />
       </View>
+      <Text numberOfLines={2} style={[styles.financialLabel, inter18('medium')]}>{label}</Text>
     </Pressable>
   );
 }
 
-function BottomTab({
-  IconComponent,
-  label,
-  active = false,
-  isSpecial = false,
-}: {
-  IconComponent: SvgIconType;
-  label?: string;
-  active?: boolean;
-  isSpecial?: boolean;
-}) {
-  if (isSpecial) {
-    return (
-      <View style={styles.bottomTabItem}>
-        <Pressable style={styles.specialTabButton}>
-          <IconComponent width={44} height={32} />
-        </Pressable>
-      </View>
-    );
-  }
+const FINANCIAL_SERVICES = [
+  { id: 'insurance', label: 'Insurance', Icon: InsuranceCardIcon },
+  { id: 'tax', label: 'Tax Services', Icon: TaxCardIcon },
+  { id: 'mutual', label: 'Mutual Funds', Icon: MutualFundCardIcon },
+  { id: 'planwealth', label: 'PlanWealth', Icon: CalculatorTileIcon },
+] as const;
 
-  return (
-    <View style={styles.bottomTabItem}>
-      <Pressable style={[styles.bottomTabButton, active ? styles.bottomTabButtonActive : undefined]}>
-        <IconComponent width={24} height={24} />
-        <Text style={[styles.bottomTabText, active ? styles.bottomTabTextActive : undefined]}>
-          {label}
-        </Text>
-      </Pressable>
-    </View>
-  );
-}
-
-function HomeScreen({ onGetStarted, onServicePress, onGovernmentDocuments, onInsurancePress,onOpenNotifications,
-  onOpenRewards }: HomeScreenProps) {
+function HomeScreen({
+  onGetStarted,
+  onServicePress,
+  onOpenService,
+  onGovernmentDocuments,
+  onInsurancePress,
+  onOpenNotifications,
+  onOpenCart,
+  onOpenRewards,
+  onOpenCalculators,
+  onOpenProfile,
+  initialRequestsParentOrderId,
+}: HomeScreenProps) {
+  const [mainTab, setMainTab] = React.useState<ServicesMainTab>('home');
+  const [exploreOverlay, setExploreOverlay] = React.useState<'healthInsurance' | null>(null);
   const { services: govServices, loading: govLoading } = useGovernmentServices();
+  const { items: cartItems } = useServiceCart();
+  const { orders, loading: myOrdersLoading } = useMyOrders();
+  const { profile, initials } = useUserProfile();
+  const activeRequestsRef = React.useRef<ScrollView | null>(null);
+  const [activeRequestsIndex, setActiveRequestsIndex] = React.useState(0);
+
+  const showExplore = mainTab === 'explore';
+  const showRequests = mainTab === 'requests';
+  const showExploreHealthInsurance = showExplore && exploreOverlay === 'healthInsurance';
+
+  const activeParentOrders = React.useMemo(
+    () => orders.filter(o => isActiveOrder(o.status)),
+    [orders],
+  );
+
+  const activeCarouselLayout = React.useMemo(() => {
+    const windowWidth = Dimensions.get('window').width;
+    const outerPadding = 16; // scrollContent paddingHorizontal
+    const innerPadding = 11; // activeRequestsWrap paddingHorizontal
+    const gap = 10;
+    const itemWidth = Math.max(280, windowWidth - outerPadding * 2 - innerPadding * 2);
+    const snapInterval = itemWidth + gap;
+    return { itemWidth, gap, snapInterval };
+  }, []);
+
+  React.useEffect(() => {
+    if (showExplore || showRequests || showExploreHealthInsurance) {
+      return;
+    }
+    if (activeParentOrders.length <= 1) {
+      setActiveRequestsIndex(0);
+      return;
+    }
+
+    const id = setInterval(() => {
+      setActiveRequestsIndex(prev => {
+        const next = (prev + 1) % activeParentOrders.length;
+        activeRequestsRef.current?.scrollTo({
+          x: next * activeCarouselLayout.snapInterval,
+          animated: true,
+        });
+        return next;
+      });
+    }, 3500);
+
+    return () => clearInterval(id);
+  }, [
+    activeParentOrders.length,
+    activeCarouselLayout.snapInterval,
+    showExplore,
+    showExploreHealthInsurance,
+    showRequests,
+  ]);
+
+  const handleMainTabPress = (tab: ServicesMainTab) => {
+    if (tab !== 'explore') {
+      setExploreOverlay(null);
+    }
+    setMainTab(tab);
+  };
+
+  React.useEffect(() => {
+    if (initialRequestsParentOrderId) {
+      setMainTab('requests');
+    }
+  }, [initialRequestsParentOrderId]);
+
+  const handleExploreServicePress = (_service: ExploreServiceItem) => {
+    // Reserved for future explore → service detail / CRM routes.
+  };
+
+  const displayName = profile?.name?.trim().split(/\s+/)[0] ?? 'there';
+  const activeFocusTitle =
+    activeParentOrders.length > 0
+      ? `${activeParentOrders.length} ACTIVE FOCUS ITEM${activeParentOrders.length > 1 ? 'S' : ''}`
+      : 'ACTIVE FOCUS ITEMS';
+
+  const handleFinancialPress = (id: string) => {
+    if (id === 'insurance') {
+      onInsurancePress?.();
+      return;
+    }
+    if (id === 'planwealth') {
+      onOpenCalculators?.();
+    }
+  };
 
   return (
-    <SafeAreaView style={styles.safeArea}>
+    <SafeAreaView style={styles.safeArea} edges={['top', 'left', 'right']}>
       <View style={styles.screen}>
-        <View style={styles.hero}>
-          <View pointerEvents="none" style={styles.heroBackground}>
-            <Svg height="100%" width="100%">
-              <Rect fill="#9E8DFF" height="100%" width="100%" x="0" y="0" />
-            </Svg>
-          </View>
-
-          <View style={styles.heroTopRow}>
-            <View />
-            <View style={styles.heroRight}>
-              <View style={styles.avatar}>
-                <Text style={styles.avatarText}>AJ</Text>
+        {showExploreHealthInsurance ? (
+          <HealthInsuranceStack onBack={() => setExploreOverlay(null)} />
+        ) : showExplore ? (
+          <ExploreScreen
+            onOpenNotifications={onOpenNotifications}
+            onProfilePress={onOpenProfile}
+            onReferPress={onOpenRewards}
+            onServicePress={handleExploreServicePress}
+            onHealthInsurancePress={() => setExploreOverlay('healthInsurance')}
+            profileInitials={initials}
+            userName={profile?.name}
+          />
+        ) : showRequests ? (
+          <MyRequestsScreen
+            onOpenNotifications={onOpenNotifications}
+            onOpenCart={onOpenCart}
+            onOpenService={onOpenService}
+            cartItemCount={cartItems.length > 0 ? cartItems.length : undefined}
+            profileInitials={initials}
+            onProfilePress={onOpenProfile}
+            userName={profile?.name}
+            initialParentOrderId={initialRequestsParentOrderId}
+          />
+        ) : (
+          <>
+            <ScrollView
+              bounces
+              stickyHeaderIndices={[0]}
+              style={styles.homeScroll}
+              contentContainerStyle={styles.homeScrollContent}
+              showsVerticalScrollIndicator={false}>
+              <View style={styles.stickyHeroShell}>
+                <HomeHeroHeader
+                  profileInitials={initials}
+                  userName={displayName}
+                  heroLayout="home"
+                  homePart="sticky"
+                  showSearchBar
+                  onProfilePress={onOpenProfile}
+                  onNotificationPress={onOpenNotifications}
+                  onCartPress={onOpenCart}
+                  notificationCount={1}
+                  cartItemCount={cartItems.length > 0 ? cartItems.length : undefined}
+                />
               </View>
 
-              <Pressable
-                accessibilityLabel="Open notifications"
-                hitSlop={8}
-                onPress={onOpenNotifications}
-                style={styles.notifyWrap}>
-                <View style={styles.notifyBubble}>
-                  <Icon kind="bell" color="#111827" size={17} />
-                </View>
-                <View style={styles.notifyDot}>
-                  <Text style={styles.notifyCount}>1</Text>
-                </View>
-              </Pressable>
-            </View>
-          </View>
-
-          <View style={styles.heroCopy}>
-            <View style={styles.titleRow}>
-              <Text style={styles.heroTitle}>Ask MPS Connect</Text>
-              <Icon kind="chat" color="#FFFFFF" size={22} />
-            </View>
-
-            <Text style={styles.heroSubtitle}>
-              Tell us how we can help you today
-            </Text>
-
-            <Pressable onPress={onGetStarted} style={styles.heroButton}>
-              <Text style={styles.heroButtonText}>Get Started</Text>
-            </Pressable>
-          </View>
-
-          <View pointerEvents="none" style={styles.heroCurve}>
-            <Svg
-              height="56"
-              width="100%"
-              viewBox="0 0 430 46"
-              preserveAspectRatio="none">
-              <Path
-                d="M0 2C110 14 260 17 430 0V14C300 35 130 38 0 28V2Z"
-                fill="#5E02AF"
+              <HomeHeroHeader
+                homePart="cta"
+                heroLayout="home"
+                onCtaPress={onGetStarted}
               />
-              <Path
-                d="M0 28C130 38 300 35 430 14V46H0V28Z"
-                fill="#FFFFFF"
-              />
-            </Svg>
-          </View>
-        </View>
 
-        <View style={styles.contentSheet}>
-          <ScrollView
-            bounces={false}
-            contentContainerStyle={styles.scrollContent}
-            showsVerticalScrollIndicator={false}>
+              <View style={styles.activeFocusOverlap}>
+                <SectionCard
+                  title={activeFocusTitle}
+                  blueHeader
+                  rightChevron
+                  onHeaderPress={() => handleMainTabPress('requests')}>
+                  {myOrdersLoading ? (
+                    <View style={styles.emptyState}>
+                      <ActivityIndicator size="small" color="#5E02AF" />
+                    </View>
+                  ) : activeParentOrders.length === 0 ? (
+                    <View style={styles.focusEmptyCard}>
+                      <View style={styles.focusIconBox}>
+                        <Text style={styles.focusIconEmoji}>📋</Text>
+                      </View>
+                      <View style={styles.focusTextCol}>
+                        <Text style={[styles.focusTitle, inter18('bold')]}>No pending tasks</Text>
+                        <Text style={[styles.focusSubtitle, inter18('regular')]}>
+                          Your active service requests will appear here
+                        </Text>
+                      </View>
+                    </View>
+                  ) : (
+                    <View style={styles.activeRequestsWrap}>
+                      <ScrollView
+                        ref={activeRequestsRef}
+                        horizontal
+                        pagingEnabled
+                        snapToInterval={activeCarouselLayout.snapInterval}
+                        decelerationRate="fast"
+                        showsHorizontalScrollIndicator={false}
+                        contentContainerStyle={{ paddingRight: activeCarouselLayout.gap }}
+                        onMomentumScrollEnd={e => {
+                          const x = e.nativeEvent.contentOffset.x;
+                          const next = Math.round(x / activeCarouselLayout.snapInterval);
+                          setActiveRequestsIndex(next);
+                        }}>
+                        {activeParentOrders.map(order => {
+                          const previewName =
+                            order.preview?.[0]?.name ??
+                            order.items?.[0]?.service_name ??
+                            'Service request';
+                          const imageUri = resolveServiceImage(order.items?.[0]?.image_url);
+                          const subtitle =
+                            order.summary?.total_items != null
+                              ? `${order.summary.total_items} item${
+                                  order.summary.total_items > 1 ? 's' : ''
+                                } in progress`
+                              : 'Tap to view details';
 
-            <SectionCard title="Your Active Requests" blueHeader>
-              <View style={styles.emptyState}>
-                <Text style={styles.emptyText}>No active requests</Text>
+                          return (
+                            <Pressable
+                              key={order.parent_order_id}
+                              onPress={() => handleMainTabPress('requests')}
+                              style={({ pressed }) => [
+                                styles.focusCard,
+                                { width: activeCarouselLayout.itemWidth, marginRight: activeCarouselLayout.gap },
+                                pressed && { opacity: 0.92 },
+                              ]}>
+                              <View style={styles.focusIconBox}>
+                                {imageUri ? (
+                                  <Image
+                                    source={{ uri: imageUri }}
+                                    style={styles.focusThumbImg}
+                                    resizeMode="cover"
+                                  />
+                                ) : (
+                                  <Text style={styles.focusIconEmoji}>📄</Text>
+                                )}
+                              </View>
+                              <View style={styles.focusTextCol}>
+                                <Text
+                                  style={[styles.focusTitle, inter18('bold')]}
+                                  numberOfLines={1}>
+                                  {previewName}
+                                </Text>
+                                <Text
+                                  style={[styles.focusSubtitle, inter18('regular')]}
+                                  numberOfLines={2}>
+                                  {subtitle}
+                                </Text>
+                                <Text style={[styles.focusAmount, inter18('semiBold')]}>
+                                  {formatMoney(order.total_amount)}
+                                </Text>
+                              </View>
+                              <Icon kind="chevron" color="#9CA3AF" size={22} />
+                            </Pressable>
+                          );
+                        })}
+                      </ScrollView>
+
+                      {activeParentOrders.length > 1 ? (
+                        <View style={styles.activeDots}>
+                          {activeParentOrders.map((_, i) => (
+                            <View
+                              key={i}
+                              style={[
+                                styles.activeDot,
+                                i === activeRequestsIndex && styles.activeDotActive,
+                              ]}
+                            />
+                          ))}
+                        </View>
+                      ) : null}
+                    </View>
+                  )}
+                </SectionCard>
               </View>
-            </SectionCard>
 
-            <SectionCard compact>
-              <Pressable
-                accessibilityLabel="Open rewards"
-                onPress={onOpenRewards}
-                style={styles.rewardRow}>
-                <Text style={styles.rewardStar}>⭐</Text>
-                <View style={styles.rewardTextWrap}>
-                  <Text style={styles.rewardTitle}>Rewards</Text>
-                  <Text style={styles.rewardPoints}>1250 Points</Text>
-                </View>
-                <Icon kind="chevron" color="#111111" size={24} />
-              </Pressable>
-            </SectionCard>
+              <View style={styles.scrollSections}>
+                <SectionCard compact>
+                  <Pressable
+                    accessibilityLabel="Open rewards"
+                    onPress={onOpenRewards}
+                    style={styles.rewardRow}>
+                    <Text style={styles.rewardStar}>⭐</Text>
+                    <View style={styles.rewardTextWrap}>
+                      <Text style={[styles.rewardTitle, inter18('bold')]}>REWARDS</Text>
+                      <Text style={[styles.rewardPoints, inter18('bold')]}>1250 Points Available</Text>
+                    </View>
+                    <Icon kind="chevron" color="#111111" size={24} />
+                  </Pressable>
+                </SectionCard>
 
-            <SectionCard title="Government Documents" rightChevron onHeaderPress={onGovernmentDocuments}>
-              {govLoading ? (
-                <View style={styles.loadingContainer}>
-                  <ActivityIndicator size="small" color="#9E8DFF" />
-                </View>
-              ) : (
-                <ScrollView
-                  horizontal
-                  showsHorizontalScrollIndicator={false}
-                  contentContainerStyle={styles.quickGrid}>
-                  {govServices.map(service => (
-                    <QuickService
-                      key={service.id}
-                      imageUri={`${service.service_image}`}
-                      label={service.name}
-                      onPress={() => onServicePress?.(service.id)}
-                    />
-                  ))}
-                </ScrollView>
-              )}
-            </SectionCard>
+                <SectionCard
+                  title="Government Documents"
+                  rightChevron
+                  onHeaderPress={onGovernmentDocuments}>
+                  {govLoading ? (
+                    <View style={[styles.loadingContainer, styles.flatSectionBody]}>
+                      <ActivityIndicator size="small" color="#9E8DFF" />
+                    </View>
+                  ) : govServices.length === 0 ? (
+                    <View style={[styles.emptyState, styles.flatSectionBody]}>
+                      <Text style={[styles.emptyText, inter18('regular')]}>No services available</Text>
+                    </View>
+                  ) : (
+                    <AutoMarqueeScroll
+                      speed={0.35}
+                      gap={14}
+                      contentContainerStyle={styles.marqueeContent}>
+                      {govServices.map(service => (
+                        <QuickService
+                          key={service.id}
+                          imageUri={resolveServiceImage(service.service_image)}
+                          label={service.name}
+                          onPress={() => onServicePress?.(service.id)}
+                        />
+                      ))}
+                    </AutoMarqueeScroll>
+                  )}
+                </SectionCard>
 
-            <View style={styles.smallRow}>
-              <SmallCategory IconComponent={InsuranceCardIcon} label="Insurance" onPress={onInsurancePress} />
-              <SmallCategory IconComponent={TaxCardIcon} label="Tax Services" />
-              <SmallCategory IconComponent={MutualFundCardIcon} label="Mutual Funds" />
-            </View>
-          </ScrollView>
+                <SectionCard title="Financial Services" rightChevron>
+                  <AutoMarqueeScroll
+                    speed={0.32}
+                    gap={12}
+                    contentContainerStyle={styles.marqueeContentFinancial}>
+                    {FINANCIAL_SERVICES.map(item => (
+                      <FinancialServiceCard
+                        key={item.id}
+                        IconComponent={item.Icon}
+                        label={item.label}
+                        onPress={() => handleFinancialPress(item.id)}
+                      />
+                    ))}
+                  </AutoMarqueeScroll>
+                </SectionCard>
+              </View>
+            </ScrollView>
+          </>
+        )}
 
-          <View style={styles.tabBarWrap}>
-            <View style={styles.tabBar}>
-              <BottomTab IconComponent={BottomHomeIcon} label="Home" active />
-              <BottomTab IconComponent={BottomRequestsIcon} label="My requests" />
-              <BottomTab IconComponent={BottomExploreIcon} label="Explore" />
-              <BottomTab IconComponent={BottomMoreIcon} isSpecial />
-            </View>
-          </View>
-        </View>
+        {!showExploreHealthInsurance ? (
+          <ServicesBottomTabBar activeTab={mainTab} onTabPress={handleMainTabPress} />
+        ) : null}
       </View>
     </SafeAreaView>
   );
@@ -356,154 +622,48 @@ const styles = StyleSheet.create({
     backgroundColor: '#FFFFFF',
   },
 
-  hero: {
-    position: 'relative',
-    minHeight: 315,
-    paddingHorizontal: 16,
-    paddingTop: 20,
-    paddingBottom: 16,
-    overflow: 'hidden',
-    backgroundColor: '#9E8DFF',
-  },
-
-  heroBackground: {
-    ...StyleSheet.absoluteFill,
-  },
-
-  heroTopRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 20,
-    marginTop: 28,
-  },
-
-  heroRight: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 10,
-  },
-
-  avatar: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
-    backgroundColor: '#1286B3',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-
-  avatarText: {
-    fontSize: 11,
-    fontWeight: '700',
-    color: '#FFFFFF',
-  },
-
-  notifyWrap: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
-    backgroundColor: '#E8DEFF',
-    alignItems: 'center',
-    justifyContent: 'center',
-    position: 'relative',
-  },
-
-  notifyBubble: {
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-
-  notifyDot: {
-    position: 'absolute',
-    top: -3,
-    right: -2,
-    width: 15,
-    height: 15,
-    borderRadius: 7.5,
-    backgroundColor: '#FF4D6D',
-    borderWidth: 2,
-    borderColor: '#FFFFFF',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-
-  notifyCount: {
-    color: '#FFFFFF',
-    fontSize: 8,
-    fontWeight: '700',
-  },
-
-  heroCopy: {
-    alignItems: 'center',
-    marginTop: 6,
-  },
-
-  titleRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
-    marginBottom: 10,
-  },
-
-  heroTitle: {
-    color: '#FFFFFF',
-    fontSize: 25,
-    fontWeight: '800',
-    textAlign: 'center',
-  },
-
-  heroSubtitle: {
-    color: '#FFFFFF',
-    fontSize: 16,
-    fontWeight: '500',
-    textAlign: 'center',
-    marginBottom: 24,
-  },
-
-  heroButton: {
-    alignSelf: 'center',
-    backgroundColor: '#111111',
-    borderRadius: 8,
-    paddingHorizontal: 30,
-    paddingVertical: 12,
-    minWidth: 115,
-    alignItems: 'center',
-  },
-
-  heroButtonText: {
-    color: '#FFFFFF',
-    fontSize: 15,
-    fontWeight: '700',
-  },
-
-  heroCurve: {
-    position: 'absolute',
-    left: 0,
-    right: 0,
-    bottom: -2,
-  },
-
-  contentSheet: {
+  homeScroll: {
     flex: 1,
     backgroundColor: '#F7F7F7',
-    overflow: 'visible',
   },
 
-  scrollContent: {
-    paddingHorizontal: 16,
-    paddingTop: 10,
+  homeScrollContent: {
     paddingBottom: 130,
-    gap: 10,
+    backgroundColor: '#F7F7F7',
+  },
+
+  stickyHeroShell: {
+    backgroundColor: '#6A5AE0',
+    zIndex: 20,
+    elevation: 12,
+  },
+
+  activeFocusOverlap: {
+    marginTop: -22,
+    marginHorizontal: 16,
+    marginBottom: 8,
+    zIndex: 5,
+    elevation: 8,
+  },
+
+  scrollSections: {
+    paddingHorizontal: 16,
+    gap: 14,
+    paddingTop: 4,
   },
 
   card: {
     backgroundColor: '#FFFFFF',
-    borderRadius: 8,
+    borderRadius: 16,
     borderWidth: 1,
-    borderColor: '#D8D8D8',
+    borderColor: '#E8EDF3',
     overflow: 'hidden',
     minHeight: 92,
+    shadowColor: '#64748B',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.06,
+    shadowRadius: 10,
+    elevation: 2,
   },
 
   compactCard: {
@@ -513,24 +673,44 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
 
+  flatCard: {
+    backgroundColor: 'transparent',
+    borderWidth: 0,
+    borderRadius: 0,
+    elevation: 0,
+    shadowOpacity: 0,
+    shadowRadius: 0,
+    shadowOffset: { width: 0, height: 0 },
+    marginHorizontal: -16,
+    minHeight: 0,
+  },
+
   cardHeader: {
-    minHeight: 31,
+    minHeight: 38,
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    paddingHorizontal: 11,
-    paddingTop: 0,
-    paddingBottom: 0,
+    paddingHorizontal: 14,
+    paddingVertical: 8,
+  },
+  flatCardHeader: {
+    backgroundColor: 'transparent',
+    paddingHorizontal: 16,
   },
 
   blueCardHeader: {
     backgroundColor: '#E3F3FF',
   },
+  
+  flatSectionBody: {
+    backgroundColor: 'transparent',
+  },
 
   cardTitle: {
-    fontSize: 13,
-    fontWeight: '800',
-    color: '#3F3F46',
+    fontSize: 12,
+    color: '#1E3A5F',
+    letterSpacing: 0.4,
+    textTransform: 'uppercase',
   },
 
   emptyState: {
@@ -555,7 +735,6 @@ const styles = StyleSheet.create({
     fontSize: 28,
     marginRight: 10,
     color: '#F59E0B',
-    fontWeight: '700',
   },
 
   rewardTextWrap: {
@@ -563,51 +742,64 @@ const styles = StyleSheet.create({
   },
 
   rewardTitle: {
-    fontSize: 12,
-    fontWeight: '800',
+    fontSize: 11,
     color: '#FF8A00',
-    marginBottom: 2,
+    marginBottom: 3,
+    letterSpacing: 0.3,
   },
 
   rewardPoints: {
-    fontSize: 12,
-    fontWeight: '500',
-    color: '#333333',
+    fontSize: 14,
+    color: '#111827',
   },
 
-  quickGrid: {
-    flexDirection: 'row',
-    paddingHorizontal: 10,
-    paddingTop: 14,
-    paddingBottom: 18,
-    gap: 12,
+  marqueeContent: {
+    paddingHorizontal: 14,
+    paddingTop:12,
+    paddingBottom:14,
+  },
+
+  marqueeContentFinancial: {
+    paddingHorizontal: 14,
+    paddingTop: 10,
+    paddingBottom: 14,
   },
 
   quickItem: {
-    width: 68,
+    width: 88,
     alignItems: 'center',
     justifyContent: 'flex-start',
   },
 
-  quickIconWrap: {
-    height: 48,
-    width: 48,
+  quickIconCard: {
+    width: 72,
+    height: 72,
+    borderRadius: 18,
+    backgroundColor: '#F8FAFC',
+    borderWidth: 1,
+    borderColor: '#E8EDF3',
     alignItems: 'center',
     justifyContent: 'center',
-    marginBottom: 7,
+    marginBottom: 8,
   },
 
   quickServiceImage: {
-    width: 40,
-    height: 40,
+    width: 42,
+    height: 42,
+  },
+
+  quickIconPlaceholder: {
+    width: 42,
+    height: 42,
+    borderRadius: 10,
+    backgroundColor: '#E5E7EB',
   },
 
   quickLabel: {
-    fontSize: 10.5,
+    fontSize: 11,
     textAlign: 'center',
-    color: '#333333',
-    lineHeight: 13,
-    fontWeight: '400',
+    color: '#374151',
+    lineHeight: 14,
   },
 
   loadingContainer: {
@@ -616,100 +808,122 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
 
-  smallRow: {
-    flexDirection: 'row',
-    gap: 7,
-  },
-
-  smallCategory: {
-    flex: 1,
+  financialCard: {
+    width: 96,
+    height: 128,
     backgroundColor: '#FFFFFF',
-    borderRadius: 8,
+    borderRadius: 16,
     borderWidth: 1,
-    borderColor: '#D8D8D8',
-    height: 112,
+    borderColor: '#E8EDF3',
     alignItems: 'center',
     paddingTop: 14,
+    paddingHorizontal: 4,
+    paddingVertical: 4,
+    justifyContent: "flex-start",
   },
 
-  smallIconWrap: {
+  financialLabel: {
+    fontSize: 12,
+    color: '#374151',
+    textAlign: 'center',
+    marginBottom: 8,
+  },
+
+  financialIconWrap: {
     flex: 1,
+    width: 64,
+    height: 64,
+    borderRadius: 14,
+    backgroundColor: "#E8EDF3",
     alignItems: 'center',
     justifyContent: 'center',
-    marginTop: 4,
   },
 
-  smallCategoryLabel: {
-    fontSize: 12,
-    fontWeight: '800',
-    color: '#555555',
-    textAlign: 'center',
+  activeRequestsWrap: {
+    paddingHorizontal: 14,
+    paddingVertical: 14,
+    gap: 10,
   },
 
-  tabBarWrap: {
-    position: 'absolute',
-    left: 4,
-    right: 4,
-    bottom: 10,
-  },
-
-  tabBar: {
+  focusCard: {
+    backgroundColor: '#FFFFFF',
+    borderWidth: 1,
+    borderColor: '#E8EDF3',
+    borderRadius: 16,
+    paddingHorizontal: 14,
+    paddingVertical: 14,
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#070707',
-    borderRadius: 18,
-    paddingHorizontal: 8,
-    paddingVertical: 8,
-    shadowColor: '#000000',
-    shadowOffset: {
-      width: 0,
-      height: 10,
-    },
-    shadowOpacity: 0.22,
-    shadowRadius: 18,
-    elevation: 18,
+    gap: 12,
   },
 
-  bottomTabItem: {
+  focusEmptyCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+    paddingHorizontal: 14,
+    paddingVertical: 16,
+  },
+
+  focusIconBox: {
+    width: 54,
+    height: 54,
+    borderRadius: 14,
+    backgroundColor: '#EEF4FF',
+    alignItems: 'center',
+    justifyContent: 'center',
+    overflow: 'hidden',
+  },
+
+  focusIconEmoji: {
+    fontSize: 24,
+  },
+
+  focusThumbImg: {
+    width: '100%',
+    height: '100%',
+  },
+
+  focusTextCol: {
     flex: 1,
-    alignItems: 'center',
+    minWidth: 0,
+    gap: 4,
+  },
+
+  focusTitle: {
+    fontSize: 15,
+    color: '#111827',
+    lineHeight: 18,
+  },
+
+  focusSubtitle: {
+    fontSize: 12,
+    color: '#6B7280',
+    lineHeight: 16,
+  },
+
+  focusAmount: {
+    fontSize: 13,
+    color: '#5E02AF',
+    marginTop: 2,
+  },
+  activeDots: {
+    flexDirection: 'row',
     justifyContent: 'center',
+    gap: 6,
+    paddingTop: 8,
+  },
+  activeDot: {
+    width: 7,
+    height: 7,
+    borderRadius: 4,
+    backgroundColor: '#E5E7EB',
+  },
+  activeDotActive: {
+    width: 22,
+    backgroundColor: '#5E02AF',
   },
 
-  bottomTabButton: {
-    width: '100%',
-    minHeight: 60,
-    borderRadius: 14,
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingVertical: 8,
-    paddingHorizontal: 6,
-  },
-
-  bottomTabButtonActive: {
-    backgroundColor: '#2B2B2F',
-  },
-
-  bottomTabText: {
-    marginTop: 4,
-    color: '#FFFFFF',
-    fontSize: 11,
-    fontWeight: '500',
-    textAlign: 'center',
-  },
-
-  bottomTabTextActive: {
-    fontWeight: '600',
-  },
-
-  specialTabButton: {
-    width: '100%',
-    minHeight: 60,
-    borderRadius: 14,
-    backgroundColor: '#EBDFFF',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
 });
 
 export default HomeScreen;
