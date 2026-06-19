@@ -13,11 +13,9 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Svg, { Path } from 'react-native-svg';
 
-import { inter18 } from '../../../core/theme/typography';
+import { SuperTopUpFormData } from '../navigation/SuperTopUpStack';
 
-import { EnquiryFormData } from '../navigation/HealthInsuranceStack';
-
-const CITY_ZONES: Record<string, number> = require('../data/cityZones.json');
+const CITY_ZONES: Record<string, number> = require('../../healthInsurance/data/cityZones.json');
 
 const COVER_OPTIONS = [
   '₹50 Thousand',
@@ -43,7 +41,7 @@ const COVER_OPTIONS = [
 
 type Props = {
   onBack: () => void;
-  onSubmit: (data: EnquiryFormData) => void;
+  onSubmit: (data: SuperTopUpFormData) => void;
 };
 
 function BackIcon() {
@@ -52,7 +50,7 @@ function BackIcon() {
       <Path
         d="M15 18L9 12L15 6"
         fill="none"
-        stroke="#1A5C35"
+        stroke="#0C4A6E"
         strokeLinecap="round"
         strokeLinejoin="round"
         strokeWidth="2.6"
@@ -359,7 +357,7 @@ function CoverDropdown({
                     <Text style={[styles.optionText, isSelected && styles.optionTextActive]}>
                       {opt}
                     </Text>
-                    {isSelected && <CheckIcon color="#6B21A8" />}
+                    {isSelected && <CheckIcon color="#0369A1" />}
                   </Pressable>
                 );
               })}
@@ -489,7 +487,7 @@ function EnquiryScreen({ onBack, onSubmit }: Props) {
           <Pressable onPress={handleBack} style={styles.backBtn} hitSlop={10}>
             <BackIcon />
           </Pressable>
-          <Text style={styles.headerTitle}>Health Enquiry</Text>
+          <Text style={styles.headerTitle}>Super Top-Up Enquiry</Text>
           <View style={styles.headerSpacer} />
         </View>
 
@@ -742,7 +740,7 @@ const styles = StyleSheet.create({
   header: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#E8F5E0',
+    backgroundColor: '#E0F2FE',
     paddingHorizontal: 16,
     paddingVertical: 12,
   },
@@ -758,8 +756,8 @@ const styles = StyleSheet.create({
     flex: 1,
     textAlign: 'center',
     fontSize: 17,
-    ...inter18('bold'),
-    color: '#14532D',
+    fontWeight: '700',
+    color: '#0C4A6E',
   },
   headerSpacer: { width: 34 },
 
@@ -793,21 +791,21 @@ const styles = StyleSheet.create({
     marginBottom: 6,
   },
   stepCircleActive: {
-    backgroundColor: '#6B21A8',
-    borderColor: '#6B21A8',
+    backgroundColor: '#0369A1',
+    borderColor: '#0369A1',
   },
   stepCircleDone: {
     backgroundColor: '#22C55E',
     borderColor: '#22C55E',
   },
-  stepNum: { fontSize: 13, color: '#9CA3AF', ...inter18('bold') },
+  stepNum: { fontSize: 13, fontWeight: '700', color: '#9CA3AF' },
   stepNumActive: { color: '#FFFFFF' },
-  stepLabel: { fontSize: 11, color: '#9CA3AF', ...inter18('medium') },
-  stepLabelActive: { color: '#6B21A8', ...inter18('bold') },
+  stepLabel: { fontSize: 11, color: '#9CA3AF', fontWeight: '500' },
+  stepLabelActive: { color: '#0369A1', fontWeight: '700' },
 
   formHeading: {
     fontSize: 20,
-    ...inter18('bold'),
+    fontWeight: '800',
     color: '#111111',
     marginBottom: 6,
   },
@@ -830,8 +828,8 @@ const styles = StyleSheet.create({
     marginBottom: 10,
   },
   memberCardActive: {
-    borderColor: '#6B21A8',
-    backgroundColor: '#FAF5FF',
+    borderColor: '#0369A1',
+    backgroundColor: '#F0F9FF',
   },
   memberCheck: {
     width: 22,
@@ -845,17 +843,17 @@ const styles = StyleSheet.create({
     marginRight: 14,
   },
   memberCheckActive: {
-    borderColor: '#6B21A8',
-    backgroundColor: '#6B21A8',
+    borderColor: '#0369A1',
+    backgroundColor: '#0369A1',
   },
   memberInfo: { flex: 1 },
   memberLabel: {
     fontSize: 15,
-    ...inter18('bold'),
+    fontWeight: '700',
     color: '#111111',
     marginBottom: 2,
   },
-  memberLabelActive: { color: '#6B21A8' },
+  memberLabelActive: { color: '#0369A1' },
   memberSub: { fontSize: 12, color: '#888888' },
 
   /* Children counter card */
@@ -872,8 +870,8 @@ const styles = StyleSheet.create({
   childrenInfo: { flex: 1 },
   childrenLabel: {
     fontSize: 15,
+    fontWeight: '700',
     color: '#111111',
-    ...inter18('bold'),
     marginBottom: 2,
   },
   childrenSub: { fontSize: 12, color: '#888888' },
@@ -886,18 +884,18 @@ const styles = StyleSheet.create({
     width: 34,
     height: 34,
     borderRadius: 17,
-    backgroundColor: '#6B21A8',
+    backgroundColor: '#0369A1',
     alignItems: 'center',
     justifyContent: 'center',
   },
   counterBtnDisabled: { backgroundColor: '#E5E7EB' },
-  counterBtnText: { fontSize: 20, color: '#FFFFFF', lineHeight: 24, ...inter18('semiBold') },
+  counterBtnText: { fontSize: 20, color: '#FFFFFF', lineHeight: 24, fontWeight: '600' },
   counterBtnTextDisabled: { color: '#9CA3AF' },
   counterVal: {
     width: 32,
     textAlign: 'center',
     fontSize: 18,
-    ...inter18('bold'),
+    fontWeight: '700',
     color: '#111111',
   },
 
@@ -905,7 +903,7 @@ const styles = StyleSheet.create({
   fieldWrap: { marginBottom: 16 },
   label: {
     fontSize: 13,
-    ...inter18('semiBold'),
+    fontWeight: '600',
     color: '#374151',
     marginBottom: 8,
   },
@@ -922,7 +920,6 @@ const styles = StyleSheet.create({
   inputError: { borderColor: '#EF4444' },
   errorText: { fontSize: 11, color: '#EF4444', marginTop: 4 },
 
-  /* Row layout for side-by-side fields */
   row: { flexDirection: 'row', gap: 12 },
   halfField: { flex: 1 },
 
@@ -1005,7 +1002,7 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1,
     borderBottomColor: '#F3F4F6',
   },
-  modalTitle: { fontSize: 16, color: '#111111', ...inter18('bold') },
+  modalTitle: { fontSize: 16, fontWeight: '700', color: '#111111' },
   modalList: { paddingHorizontal: 20 },
   optionRow: {
     flexDirection: 'row',
@@ -1016,17 +1013,17 @@ const styles = StyleSheet.create({
   optionRowBorder: { borderBottomWidth: 1, borderBottomColor: '#F3F4F6' },
   optionRowActive: { backgroundColor: 'transparent' },
   optionText: { fontSize: 15, color: '#374151' },
-  optionTextActive: { color: '#6B21A8', ...inter18('bold') },
+  optionTextActive: { color: '#0369A1', fontWeight: '700' },
 
   /* Next / Submit button */
   nextBtn: {
-    backgroundColor: '#6B21A8',
+    backgroundColor: '#0369A1',
     borderRadius: 12,
     paddingVertical: 16,
     alignItems: 'center',
     marginTop: 12,
   },
-  nextBtnText: { color: '#FFFFFF', fontSize: 16, ...inter18('bold') },
+  nextBtnText: { color: '#FFFFFF', fontWeight: '700', fontSize: 16 },
   pressed: { opacity: 0.82 },
 });
 

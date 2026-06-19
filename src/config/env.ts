@@ -17,7 +17,7 @@ import { Platform } from 'react-native';
  * Fallback when `.env` is missing or `API_BASE_URL` is empty.
  * For a physical device, set `API_BASE_URL` in `.env` to your PC LAN IP.
  */
-const DEV_MACHINE_HOST = '192.168.1.193';
+const DEV_MACHINE_HOST = ' 192.168.1.171';
 const API_PORT = 5000;
 
 function buildFallbackApiBaseUrl(): string {

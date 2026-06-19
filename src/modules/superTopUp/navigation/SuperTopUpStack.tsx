@@ -3,7 +3,7 @@ import React, { useState } from 'react';
 import EnquiryScreen from '../screens/EnquiryScreen';
 import QuoteScreen from '../screens/QuoteScreen';
 
-export type EnquiryFormData = {
+export type SuperTopUpFormData = {
   includeSelf: boolean;
   includeSpouse: boolean;
   childrenCount: number;
@@ -20,13 +20,13 @@ export type EnquiryFormData = {
 
 type ScreenState =
   | { name: 'Enquiry' }
-  | { name: 'Quote'; formData: EnquiryFormData };
+  | { name: 'Quote'; formData: SuperTopUpFormData };
 
 type Props = {
   onBack: () => void;
 };
 
-function HealthInsuranceStack({ onBack }: Props) {
+function SuperTopUpStack({ onBack }: Props) {
   const [screen, setScreen] = useState<ScreenState>({ name: 'Enquiry' });
 
   if (screen.name === 'Quote') {
@@ -46,4 +46,4 @@ function HealthInsuranceStack({ onBack }: Props) {
   );
 }
 
-export default HealthInsuranceStack;
+export default SuperTopUpStack;

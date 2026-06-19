@@ -79,6 +79,11 @@ function HeartIcon({ filled }: { filled: boolean }) {
 /* ─── Hero banner ───────────────────────────────────────── */
 
 const BANNER_CONTENT: Record<number, { title: string; sub: string; bullets: string[] }> = {
+  1: {
+    title: 'Tax Services.\nMade Easy.',
+    sub: 'File taxes & save more',
+    bullets: ['expert filing', 'maximum savings', 'on-time submission'],
+  },
   2: {
     title: 'Insurance Made\nSimple.',
     sub: 'Protect what matters most',

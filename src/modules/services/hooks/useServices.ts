@@ -17,7 +17,7 @@ export function useGovernmentServices(categoryId = 3) {
   useEffect(() => {
     setLoading(true);
     fetchServicesByCategory(categoryId)
-      .then(res => setServices(res.data.services))
+      .then(res => setServices(res.data.services ?? []))
       .catch(err => setError(err.message ?? 'Failed to load services'))
       .finally(() => setLoading(false));
   }, [categoryId]);
