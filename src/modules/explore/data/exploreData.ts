@@ -1,10 +1,33 @@
 export type ExploreServiceAction = 'healthInsurance';
 
+export type ExploreServiceIconKey =
+  | 'itrFiling'
+  | 'propertyTaxNameCertificate'
+  | 'incomeTaxReply'
+  | 'aadhar'
+  | 'pan'
+  | 'voterId'
+  | 'passport'
+  | 'rationCard'
+  | 'twoWheelLicense'
+  | 'twoFourWheelLicense'
+  | 'seniorCitizenCertificate'
+  | 'birthCertificate'
+  | 'deathCertificate'
+  | 'marriageCertificate'
+  | 'domicileCertificate'
+  | 'casteCertificate'
+  | 'incomeCertificate'
+  | 'drivingLicence'
+  | 'rentAgreement';
+
 export type ExploreServiceItem = {
   id: string;
   title: string;
   description: string;
-  emoji: string;
+  emoji?: string;
+  iconKey?: ExploreServiceIconKey;
+  priceLabel?: string;
   tag?: string;
   ctaLabel?: string;
   /** When set, Explore routes this card to a native module instead of a generic handler. */
@@ -32,177 +55,192 @@ export const EXPLORE_USER = {
   location: 'Pune, Maharashtra, India',
 };
 
-export const EXPLORE_CATEGORIES: ExploreCategory[] = [
+export const TAX_SEASON_ESSENTIALS: ExploreCategory = {
+  id: 'tax-season',
+  title: 'Tax Season Essentials',
+  layout: 'horizontal',
+  services: [
+    {
+      id: 'tax-season-itr',
+      title: 'ITR Filing',
+      description: 'Get your ITR filed by experts quickly and accurately.',
+      iconKey: 'itrFiling',
+      priceLabel: '₹499',
+      ctaLabel: 'Apply now',
+    },
+    {
+      id: 'tax-season-property-tax',
+      title: 'Property Tax Name Certificate',
+      description: 'Update property tax records with the correct owner name.',
+      iconKey: 'propertyTaxNameCertificate',
+      priceLabel: '₹699',
+      ctaLabel: 'Apply now',
+    },
+    {
+      id: 'tax-season-itr-reply',
+      title: 'Reply to Income Tax Notice',
+      description: 'Expert help to respond to income tax notices on time.',
+      iconKey: 'incomeTaxReply',
+      priceLabel: '₹999',
+      ctaLabel: 'Apply now',
+    },
+  ],
+};
+
+export const IDENTITY_DOCUMENTS: ExploreCategory = {
+  id: 'identity',
+  title: 'Identity Documents',
+  layout: 'horizontal',
+  services: [
+    {
+      id: 'identity-aadhar',
+      title: 'Aadhaar Card Services',
+      description: 'New, update, or duplicate Aadhaar assistance.',
+      iconKey: 'aadhar',
+      priceLabel: '₹299',
+      ctaLabel: 'Apply now',
+    },
+    {
+      id: 'identity-pan',
+      title: 'PAN Card Services',
+      description: 'Apply for a new PAN or correct existing details.',
+      iconKey: 'pan',
+      priceLabel: '₹499',
+      ctaLabel: 'Apply now',
+    },
+    {
+      id: 'identity-voter',
+      title: 'Voter ID Card Services',
+      description: 'New voter ID application and correction support.',
+      iconKey: 'voterId',
+      priceLabel: '₹399',
+      ctaLabel: 'Apply now',
+    },
+    {
+      id: 'identity-passport',
+      title: 'Passport Services',
+      description: 'Passport application and renewal made simple.',
+      iconKey: 'passport',
+      priceLabel: '₹999',
+      ctaLabel: 'Apply now',
+    },
+    {
+      id: 'identity-ration',
+      title: 'Ration Card Services',
+      description: 'Apply for a new ration card or update details.',
+      iconKey: 'rationCard',
+      priceLabel: '₹349',
+      ctaLabel: 'Apply now',
+    },
+    {
+      id: 'identity-two-wheel',
+      title: 'Two-Wheel License',
+      description: 'Learner and permanent two-wheeler licence help.',
+      iconKey: 'twoWheelLicense',
+      priceLabel: '₹599',
+      ctaLabel: 'Apply now',
+    },
+    {
+      id: 'identity-two-four-wheel',
+      title: 'Two & Four Wheeler License',
+      description: 'Driving licence services for bikes and cars.',
+      iconKey: 'twoFourWheelLicense',
+      priceLabel: '₹799',
+      ctaLabel: 'Apply now',
+    },
+    {
+      id: 'identity-senior',
+      title: 'Senior Citizen Certificate',
+      description: 'Official senior citizen certificate application help.',
+      iconKey: 'seniorCitizenCertificate',
+      priceLabel: '₹449',
+      ctaLabel: 'Apply now',
+    },
+  ],
+};
+
+export const CERTIFICATES: ExploreCategory = {
+  id: 'certificates',
+  title: 'Certificates',
+  layout: 'horizontal',
+  services: [
+    {
+      id: 'cert-birth',
+      title: 'Birth Certificate',
+      description: 'Apply for a new or duplicate birth certificate.',
+      iconKey: 'birthCertificate',
+      priceLabel: '₹399',
+      ctaLabel: 'Apply now',
+    },
+    {
+      id: 'cert-death',
+      title: 'Death Certificate',
+      description: 'Get a death certificate issued without hassle.',
+      iconKey: 'deathCertificate',
+      priceLabel: '₹399',
+      ctaLabel: 'Apply now',
+    },
+    {
+      id: 'cert-marriage',
+      title: 'Marriage Certificate',
+      description: 'Register your marriage and obtain the certificate.',
+      iconKey: 'marriageCertificate',
+      priceLabel: '₹699',
+      ctaLabel: 'Apply now',
+    },
+    {
+      id: 'cert-domicile',
+      title: 'Domicile Certificate',
+      description: 'Proof of residence for government applications.',
+      iconKey: 'domicileCertificate',
+      priceLabel: '₹499',
+      ctaLabel: 'Apply now',
+    },
+    {
+      id: 'cert-caste',
+      title: 'Caste Certificate',
+      description: 'State-issued caste certificate application support.',
+      iconKey: 'casteCertificate',
+      priceLabel: '₹449',
+      ctaLabel: 'Apply now',
+    },
+    {
+      id: 'cert-income',
+      title: 'Income Certificate',
+      description: 'Official income proof for schemes and loans.',
+      iconKey: 'incomeCertificate',
+      priceLabel: '₹399',
+      ctaLabel: 'Apply now',
+    },
+  ],
+};
+
+export const LIMITED_OFFER_SERVICES: ExploreServiceItem[] = [
   {
-    id: 'tax',
-    title: 'Tax & Finance',
-    layout: 'grid',
-    services: [
-      {
-        id: 'tax-1',
-        title: 'Income Tax Filing',
-        description: 'File your ITR quickly with expert support.',
-        emoji: '📊',
-        tag: 'POPULAR',
-      },
-      {
-        id: 'tax-2',
-        title: 'GST Registration',
-        description: 'Register your business for GST compliance.',
-        emoji: '🧾',
-        tag: 'OFFER',
-      },
-      {
-        id: 'tax-3',
-        title: 'TDS Return',
-        description: 'Timely TDS filing and compliance help.',
-        emoji: '💳',
-      },
-      {
-        id: 'tax-4',
-        title: 'Tax Planning',
-        description: 'Plan savings with smart tax strategies.',
-        emoji: '📈',
-      },
-    ],
+    id: 'limited-itr',
+    title: 'ITR Filing',
+    description: 'Limited-time expert ITR filing at a special price.',
+    iconKey: 'itrFiling',
+    priceLabel: '₹499',
+    ctaLabel: 'Apply now',
   },
   {
-    id: 'certificates',
-    title: 'Certificates',
-    layout: 'grid',
-    services: [
-      {
-        id: 'cert-1',
-        title: 'Birth Certificate',
-        description: 'Apply for a new or duplicate certificate.',
-        emoji: '📜',
-        tag: 'POPULAR',
-      },
-      {
-        id: 'cert-2',
-        title: 'Income Certificate',
-        description: 'Official income proof for schemes & loans.',
-        emoji: '📋',
-      },
-      {
-        id: 'cert-3',
-        title: 'Caste Certificate',
-        description: 'State-issued caste certificate assistance.',
-        emoji: '🪪',
-      },
-      {
-        id: 'cert-4',
-        title: 'Domicile Certificate',
-        description: 'Proof of residence for government use.',
-        emoji: '🏠',
-      },
-    ],
+    id: 'limited-driving',
+    title: 'Driving Licence',
+    description: 'Fast-track learner and permanent licence assistance.',
+    iconKey: 'drivingLicence',
+    priceLabel: '₹799',
+    ctaLabel: 'Apply now',
   },
   {
-    id: 'property',
-    title: 'Property & Land Services',
-    layout: 'horizontal',
-    services: [
-      {
-        id: 'prop-1',
-        title: 'Property Registration',
-        description: 'Register sale or transfer of property.',
-        emoji: '🏡',
-        tag: 'OFFER',
-      },
-      {
-        id: 'prop-2',
-        title: 'Land Records',
-        description: 'Fetch 7/12, property card & maps.',
-        emoji: '🗺️',
-      },
-      {
-        id: 'prop-3',
-        title: 'Encumbrance Certificate',
-        description: 'Verify legal status before you buy.',
-        emoji: '🔍',
-      },
-      {
-        id: 'prop-4',
-        title: 'Mutation Entry',
-        description: 'Update land records after transfer.',
-        emoji: '📝',
-      },
-    ],
-  },
-  {
-    id: 'legal',
-    title: 'Legal Services',
-    layout: 'grid',
-    services: [
-      {
-        id: 'legal-1',
-        title: 'Affidavit',
-        description: 'Draft and notarize affidavits online.',
-        emoji: '⚖️',
-      },
-      {
-        id: 'legal-2',
-        title: 'Rent Agreement',
-        description: 'Create a legally valid rent contract.',
-        emoji: '📑',
-        tag: 'POPULAR',
-      },
-      {
-        id: 'legal-3',
-        title: 'Power of Attorney',
-        description: 'Authorize someone to act on your behalf.',
-        emoji: '✍️',
-      },
-      {
-        id: 'legal-4',
-        title: 'Will Drafting',
-        description: 'Plan asset distribution with legal help.',
-        emoji: '📖',
-      },
-    ],
-  },
-  {
-    id: 'insurance',
-    title: 'Insurance Services',
-    layout: 'horizontal',
-    services: [
-      {
-        id: EXPLORE_HEALTH_INSURANCE_SERVICE_ID,
-        title: 'Health Insurance',
-        description: 'Compare plans and buy in minutes.',
-        emoji: '🏥',
-        tag: 'OFFER',
-        ctaLabel: 'Book Now',
-        action: 'healthInsurance',
-      },
-      {
-        id: 'ins-2',
-        title: 'Life Insurance',
-        description: 'Secure your family’s financial future.',
-        emoji: '🛡️',
-      },
-      {
-        id: 'ins-3',
-        title: 'Motor Insurance',
-        description: 'Renew or buy car & bike insurance.',
-        emoji: '🚗',
-      },
-      {
-        id: 'ins-4',
-        title: 'Travel Insurance',
-        description: 'Coverage for domestic & international trips.',
-        emoji: '✈️',
-      },
-    ],
+    id: 'limited-rent',
+    title: 'Rent Agreement',
+    description: 'Create a legally valid rent agreement online.',
+    iconKey: 'rentAgreement',
+    priceLabel: '₹599',
+    ctaLabel: 'Apply now',
   },
 ];
 
-export const LIMITED_OFFER_SERVICE: ExploreServiceItem = {
-  id: 'limited-1',
-  title: 'Passport Application',
-  description: 'Fast-track assistance for new passport requests.',
-  emoji: '🛂',
-  tag: 'LIMITED',
-  ctaLabel: 'Book Now',
-};
+/** @deprecated Use LIMITED_OFFER_SERVICES */
+export const LIMITED_OFFER_SERVICE = LIMITED_OFFER_SERVICES[0];

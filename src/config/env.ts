@@ -1,6 +1,7 @@
 import {
   API_BASE_URL as ENV_API_BASE_URL,
   AUTH_API_BASE_URL as ENV_AUTH_API_BASE_URL,
+  DOCUMENTS_API_BASE_URL as ENV_DOCUMENTS_API_BASE_URL,
   CLIENT_SECRET as ENV_CLIENT_SECRET,
   IMAGE_BASE_URL as ENV_IMAGE_BASE_URL,
   MPS_CLIENT_ID as ENV_MPS_CLIENT_ID,
@@ -17,7 +18,7 @@ import { Platform } from 'react-native';
  * Fallback when `.env` is missing or `API_BASE_URL` is empty.
  * For a physical device, set `API_BASE_URL` in `.env` to your PC LAN IP.
  */
-const DEV_MACHINE_HOST = ' 192.168.1.171';
+const DEV_MACHINE_HOST = '192.168.1.237';
 const API_PORT = 5000;
 
 function buildFallbackApiBaseUrl(): string {
@@ -84,6 +85,10 @@ function maybeRewriteImageLocalLoopback(url: string): string {
   }
 }
 
+function trimEnv(value: string | undefined): string {
+  return (value ?? '').trim();
+}
+
 const resolvedApiBaseUrl = normalizeBaseUrl(ENV_API_BASE_URL ?? '');
 const resolvedImageBaseUrl = normalizeBaseUrl(ENV_IMAGE_BASE_URL ?? '');
 const resolvedAuthApiBaseUrl = normalizeBaseUrl(ENV_AUTH_API_BASE_URL ?? '');
@@ -99,11 +104,22 @@ const authBaseCandidate =
   resolvedAuthApiBaseUrl.length > 0 ? resolvedAuthApiBaseUrl : API_BASE_URL;
 export const AUTH_API_BASE_URL = maybeRewriteAuthLocalLoopback(authBaseCandidate);
 
-export const IMAGE_BASE_URL = maybeRewriteImageLocalLoopback(resolvedImageBaseUrl);
+/**
+ * DocVault — local Node server only (`/api/v1/documents/*`), not CRM.
+ * Defaults to `AUTH_API_BASE_URL`, then dev fallback `http://<host>:5000/api/v1`.
+ */
+const documentsBaseCandidate =
+  trimEnv(ENV_DOCUMENTS_API_BASE_URL).length > 0
+    ? trimEnv(ENV_DOCUMENTS_API_BASE_URL)
+    : resolvedAuthApiBaseUrl.length > 0
+      ? resolvedAuthApiBaseUrl
+      : buildFallbackApiBaseUrl();
 
-function trimEnv(value: string | undefined): string {
-  return (value ?? '').trim();
-}
+export const DOCUMENTS_API_BASE_URL = maybeRewriteAuthLocalLoopback(
+  normalizeBaseUrl(documentsBaseCandidate),
+);
+
+export const IMAGE_BASE_URL = maybeRewriteImageLocalLoopback(resolvedImageBaseUrl);
 
 /** `https://…/api/crm/v1` → `https://…/api/crm/mps/auth/oauth/token` */
 function defaultMpsOAuthTokenUrlFromApiBase(apiBase: string): string {
@@ -133,7 +149,7 @@ export const MPS_CLIENT_SECRET = trimEnv(ENV_CLIENT_SECRET);
 function defaultMpsServiceEnquiryUrlFromApiBase(apiBase: string): string {
   const base = apiBase.replace(/\/+$/, '');
   if (/\/api\/crm\/v1$/i.test(base)) {
-    return `${base}/mps/service-enquiry`;
+    return base.replace(/\/api\/crm\/v1$/i, '/api/crm/mps/service/enquiry');
   }
   return 'https://rewardplanners.com/api/crm/mps/service/enquiry';
 }

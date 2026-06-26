@@ -3,6 +3,6 @@
   "compilerOptions": {
     "types": ["jest"]
   },
-  "include": ["**/*.ts", "**/*.tsx", "src/modules/rewards/store/RewardsStore.js"],
+  "include": ["**/*.ts", "**/*.tsx", "src/modules/rewards/store/RewardsStore.js", "backend-api/src/modules/banners/banner.repository.js", "backend-api/src/modules/banners/banner.types.js"],
   "exclude": ["**/node_modules", "**/Pods"]
 }

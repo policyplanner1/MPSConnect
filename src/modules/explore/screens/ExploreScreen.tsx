@@ -1,21 +1,23 @@
 import React from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import Svg, { Rect } from 'react-native-svg';
 
+import LimitedTimeOfferBackground from '../../../assets/images/limited time offer background.svg';
+import LimitedTimeOfferImage from '../../../assets/images/limited time offer image.svg';
 import { inter18 } from '../../../core/theme/typography';
+import HomeHeroHeader from '../../services/components/HomeHeroHeader';
+import HomeSearchBar from '../../services/components/HomeSearchBar';
 import CategorySection from '../components/CategorySection';
-import ExploreHeader from '../components/ExploreHeader';
 import OfferBanner from '../components/OfferBanner';
-import SearchBar from '../components/SearchBar';
 import ServiceCard from '../components/ServiceCard';
 import type { ExploreBanner } from '../api/bannersApi';
-import { useExploreLocationLabel } from '../hooks';
 import {
-  EXPLORE_CATEGORIES,
+  CERTIFICATES,
   EXPLORE_USER,
+  IDENTITY_DOCUMENTS,
   isExploreHealthInsuranceService,
-  LIMITED_OFFER_SERVICE,
+  LIMITED_OFFER_SERVICES,
+  TAX_SEASON_ESSENTIALS,
   type ExploreServiceItem,
 } from '../data/exploreData';
 
@@ -51,12 +53,12 @@ function ReferBanner({ onPress }: { onPress?: () => void }) {
       disabled={!onPress}
       style={({ pressed }) => [styles.referBanner, pressed && { opacity: 0.92 }]}>
       <View style={styles.referCopy}>
-        <Text style={[styles.referTitle, inter18('bold')]}>FLAT 10% OFF</Text>
+        <Text style={[styles.referTitle, inter18('bold')]}>REFER AND EARN</Text>
         <Text style={[styles.referSub, inter18('regular')]}>
-          On your first order · Use code FIRST10
+          Invite friends and earn rewards on every order
         </Text>
       </View>
-      <Text style={styles.referEmoji}>📁</Text>
+      <Text style={styles.referEmoji}>🎁</Text>
     </Pressable>
   );
 }
@@ -68,17 +70,35 @@ function LimitedOfferSection({
 }) {
   return (
     <View style={styles.limitedWrap}>
-      <View style={styles.limitedHeader}>
-        <Text style={styles.limitedEmoji}>⏰</Text>
-        <View style={styles.limitedBadge}>
-          <Text style={[styles.limitedBadgeText, inter18('bold')]}>LIMITED TIME OFFER</Text>
-        </View>
+      <View pointerEvents="none" style={styles.limitedBackground}>
+        <LimitedTimeOfferBackground height="100%" preserveAspectRatio="none" width="100%" />
       </View>
-      <View style={styles.limitedCardWrap}>
-        <ServiceCard
-          service={LIMITED_OFFER_SERVICE}
-          onPress={() => onServicePress?.(LIMITED_OFFER_SERVICE)}
-        />
+
+      <View style={styles.limitedRow}>
+        <View style={styles.limitedArtWrap}>
+          <LimitedTimeOfferImage height={152} preserveAspectRatio="xMinYMid meet" width={132} />
+        </View>
+
+        <ScrollView
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          contentContainerStyle={styles.limitedScrollContent}
+          decelerationRate="fast"
+          style={styles.limitedScroll}>
+          {LIMITED_OFFER_SERVICES.map((service, index) => (
+            <View
+              key={service.id}
+              style={[
+                styles.limitedCardItem,
+                index === LIMITED_OFFER_SERVICES.length - 1 && styles.limitedCardItemLast,
+              ]}>
+              <ServiceCard
+                service={service}
+                onPress={() => onServicePress?.(service)}
+              />
+            </View>
+          ))}
+        </ScrollView>
       </View>
     </View>
   );
@@ -94,10 +114,6 @@ export default function ExploreScreen({
   profileInitials,
   userName,
 }: ExploreScreenProps) {
-  const categoriesBeforeRefer = EXPLORE_CATEGORIES.slice(0, 2);
-  const categoriesAfterRefer = EXPLORE_CATEGORIES.slice(2);
-  const locationLabel = useExploreLocationLabel();
-
   const onExploreServicePress = (service: ExploreServiceItem) => {
     handleExploreServicePress(service, { onServicePress, onHealthInsurancePress });
   };
@@ -110,17 +126,18 @@ export default function ExploreScreen({
         stickyHeaderIndices={[2]}
         contentContainerStyle={styles.scroll}>
         <View style={styles.headerBlock}>
-          <View pointerEvents="none" style={styles.headerBg}>
-            <Svg height="100%" width="100%">
-              <Rect fill="#E8DEFF" height="100%" width="100%" x="0" y="0" />
-            </Svg>
-          </View>
-
-          <ExploreHeader
+          <HomeHeroHeader
+            profileInitials={profileInitials ?? EXPLORE_USER.initials}
             userName={userName ?? EXPLORE_USER.name}
-            userInitials={profileInitials ?? EXPLORE_USER.initials}
-            onNotificationPress={onOpenNotifications}
+            greeting="Hi,"
             onProfilePress={onProfilePress}
+            onNotificationPress={onOpenNotifications}
+            notificationCount={1}
+            showCart={false}
+            showHeroCopy={false}
+            showHeroCurve={false}
+            showChatIcon={false}
+            heroBackgroundColor="#E8DEFF"
           />
         </View>
 
@@ -129,27 +146,24 @@ export default function ExploreScreen({
         </View>
 
         <View style={styles.stickySearchWrap}>
-          <SearchBar location={locationLabel} />
+          <HomeSearchBar compact />
         </View>
 
-        {categoriesBeforeRefer.map(category => (
-          <CategorySection
-            key={category.id}
-            category={category}
-            onServicePress={onExploreServicePress}
-          />
-        ))}
+        <CategorySection
+          category={TAX_SEASON_ESSENTIALS}
+          onServicePress={onExploreServicePress}
+        />
 
         <ReferBanner onPress={onReferPress} />
 
-        {categoriesAfterRefer.map((category, index) => (
-          <React.Fragment key={category.id}>
-            {index === 1 ? (
-              <LimitedOfferSection onServicePress={onExploreServicePress} />
-            ) : null}
-            <CategorySection category={category} onServicePress={onExploreServicePress} />
-          </React.Fragment>
-        ))}
+        <CategorySection
+          category={IDENTITY_DOCUMENTS}
+          onServicePress={onExploreServicePress}
+        />
+
+        <CategorySection category={CERTIFICATES} onServicePress={onExploreServicePress} />
+
+        <LimitedOfferSection onServicePress={onExploreServicePress} />
       </ScrollView>
     </SafeAreaView>
   );
@@ -161,12 +175,8 @@ const styles = StyleSheet.create({
     backgroundColor: '#F7F7F7',
   },
   headerBlock: {
-    position: 'relative',
     backgroundColor: '#E8DEFF',
     paddingBottom: 12,
-  },
-  headerBg: {
-    ...StyleSheet.absoluteFill,
   },
   bannerWrap: {
     backgroundColor: '#E8DEFF',
@@ -174,6 +184,7 @@ const styles = StyleSheet.create({
   },
   stickySearchWrap: {
     backgroundColor: '#E8DEFF',
+    paddingHorizontal: 16,
     paddingBottom: 12,
     bottom: 10,
   },
@@ -210,35 +221,45 @@ const styles = StyleSheet.create({
     fontSize: 40,
   },
   limitedWrap: {
-    marginHorizontal: 16,
+    marginLeft: 16,
+    marginRight: 0,
     marginBottom: 16,
-    borderRadius: 14,
-    backgroundColor: '#DBEAFE',
-    padding: 14,
-    borderWidth: 1,
-    borderColor: '#BFDBFE',
+    borderTopLeftRadius: 14,
+    borderBottomLeftRadius: 14,
+    borderTopRightRadius: 0,
+    borderBottomRightRadius: 0,
+    overflow: 'hidden',
+    paddingVertical: 10,
+    paddingLeft: 0,
+    paddingRight: 0,
   },
-  limitedHeader: {
+  limitedBackground: {
+    ...StyleSheet.absoluteFill,
+  },
+  limitedRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 10,
-    marginBottom: 12,
+    minHeight: 152,
   },
-  limitedEmoji: {
-    fontSize: 28,
+  limitedArtWrap: {
+    width: 132,
+    alignSelf: 'stretch',
+    justifyContent: 'center',
+    overflow: 'hidden',
   },
-  limitedBadge: {
-    backgroundColor: '#DC2626',
-    borderRadius: 6,
-    paddingHorizontal: 10,
-    paddingVertical: 4,
+  limitedScroll: {
+    flex: 1,
   },
-  limitedBadgeText: {
-    fontSize: 11,
-    color: '#FFFFFF',
-    letterSpacing: 0.3,
-  },
-  limitedCardWrap: {
+  limitedScrollContent: {
+    paddingLeft: 8,
+    paddingRight: 16,
+    paddingBottom: 4,
     alignItems: 'center',
+  },
+  limitedCardItem: {
+    marginRight: 12,
+  },
+  limitedCardItemLast: {
+    marginRight: 4,
   },
 });

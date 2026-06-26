@@ -4,7 +4,7 @@ import Svg, { Circle, Path } from 'react-native-svg';
 
 import { inter18 } from '../../../core/theme/typography';
 
-const ROTATING_SERVICES = ['Tax Filing', 'Aadhaar Card', 'PAN Card', 'Passport', 'Rent Agreement', 'Driving License', 'Health Insurance'];
+const ROTATING_SERVICES = ['"Tax Filing"', '"Aadhaar Card"', '"PAN Card"', '"Passport"', '"Rent Agreement"', '"Driving License"', '"Health Insurance"'];
 const LINE_HEIGHT = 22;
 const ROTATE_INTERVAL_MS = 2800;
 const ANIMATION_MS = 550;

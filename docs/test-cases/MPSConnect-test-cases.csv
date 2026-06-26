@@ -1,0 +1,174 @@
+Test Case ID,Module,Type,Description/Title,Preconditions,Test Steps,Test Data,Expected Result,Status
+AUTH-M-001,Auth,Mobile UI,Splash redirects to Onboarding when no token,App installed; no ACCESS_TOKEN in storage,"1. Launch app
+2. Wait for splash (~1.6s)",—,Onboarding screen shown,
+AUTH-M-002,Auth,Mobile UI,Splash redirects to Home when token exists,Valid ACCESS_TOKEN in AsyncStorage,"1. Launch app
+2. Wait for splash",Stored JWT,Home / ServicesStack shown,
+AUTH-M-003,Auth,Mobile UI,Onboarding skip navigates to Login,On Onboarding screen,1. Tap Skip for now,—,Login screen shown,
+AUTH-M-004,Auth,Mobile UI,Onboarding last slide navigates to Login,On Onboarding screen,"1. Swipe to last slide
+2. Tap continue/sign in",—,Login screen shown,
+AUTH-M-005,Auth,Mobile UI,Login - invalid email format,On Login screen,"1. Enter invalid email
+2. Enter password
+3. Tap Login","Email: notanemail; Password: password1",Alert: Please enter a valid email address.,
+AUTH-M-006,Auth,Mobile UI,Login - password too short,On Login screen,"1. Enter valid email
+2. Enter short password
+3. Tap Login","Email: user@test.com; Password: 12345",Alert: Password must be at least 6 characters.,
+AUTH-M-007,Auth,Mobile UI,Login - invalid credentials,Backend running; user does not exist,"1. Enter email/password
+2. Tap Login","Email: wrong@test.com; Password: wrongpass",Error alert with server message (e.g. Invalid credentials),
+AUTH-M-008,Auth,Mobile UI,Login - successful flow,Valid registered user; MPS OAuth configured,"1. Enter valid credentials
+2. Tap Login",Valid email + password,Navigate to Home; USER_ID and ACCESS_TOKEN saved,
+AUTH-M-009,Auth,Mobile UI,Login - Remember me saves email,On Login screen,"1. Check Remember me
+2. Login successfully",Email: user@test.com,REMEMBERED_EMAIL stored in AsyncStorage,
+AUTH-M-010,Auth,Mobile UI,Login - Remember me off clears email,Remembered email exists,"1. Uncheck Remember me
+2. Login successfully",—,REMEMBERED_EMAIL cleared,
+AUTH-M-011,Auth,Mobile UI,Login - MPS OAuth failure rolls back,Valid user; MPS OAuth unavailable,"1. Login with valid credentials",Valid credentials,Storage cleared; MPS auth error; stay on Login,
+AUTH-M-012,Auth,Mobile UI,Navigate Login to Register,On Login screen,1. Tap Register / Sign up link,—,Register screen shown,
+AUTH-M-013,Auth,Mobile UI,Navigate Login to Forgot Password,On Login screen,1. Tap Forgot password,—,Forgot Password screen shown,
+AUTH-M-014,Auth,Mobile UI,Register - validation errors,On Register screen,"1. Leave fields empty or invalid
+2. Tap Sign up","Name: A; Email: bad; Contact: 123; Password: 12",Validation alert with appropriate message,
+AUTH-M-015,Auth,Mobile UI,Register - successful signup,Backend running; unique email/contact,"1. Fill all valid fields
+2. Tap Sign up","Name: Test User; Email: newuser@test.com; Contact: 9876543210; Password: password123",Success alert then navigates to Login (no auto-login),
+AUTH-M-016,Auth,Mobile UI,Register - duplicate email,Email already registered,1. Sign up with existing email,Existing email,Error: An account with this email already exists,
+AUTH-M-017,Auth,Mobile UI,Forgot password - invalid email,On Forgot Password,"1. Enter invalid email
+2. Submit",Email: invalid,Validation alert,
+AUTH-M-018,Auth,Mobile UI,Forgot password - unknown email,On Forgot Password,"1. Enter unregistered email
+2. Submit",Email: unknown@test.com,Error: No account found with this email address,
+AUTH-M-019,Auth,Mobile UI,Forgot password - OTP sent,Registered email,"1. Enter registered email
+2. Submit",Valid registered email,Success alert then Verification Code screen,
+AUTH-M-020,Auth,Mobile UI,OTP - incomplete code,On Verification Code screen,"1. Enter fewer than 4 digits
+2. Tap Verify",OTP: 12,Alert: Please enter the 4-digit code.,
+AUTH-M-021,Auth,Mobile UI,OTP - valid code,OTP received via email,"1. Enter 4-digit OTP
+2. Tap Verify",Valid OTP,Navigate to Reset Password,
+AUTH-M-022,Auth,Mobile UI,OTP - invalid or expired code,On Verification Code screen,"1. Enter wrong OTP
+2. Tap Verify",OTP: 0000,Error: Invalid or expired verification code,
+AUTH-M-023,Auth,Mobile UI,OTP - resend disabled before 120s,On Verification Code screen,"1. Wait less than 120s
+2. Try Resend",—,Resend button disabled,
+AUTH-M-024,Auth,Mobile UI,OTP - resend after cooldown,On Verification Code screen; 120s elapsed,"1. Wait 120s
+2. Tap Resend",—,OTP fields cleared; timer reset; new OTP sent,
+AUTH-M-025,Auth,Mobile UI,Reset password - mismatch,On Reset Password screen,"1. Enter different passwords
+2. Submit","New: password1; Confirm: password2",Alert: Passwords do not match.,
+AUTH-M-026,Auth,Mobile UI,Reset password - success,Valid OTP verified,"1. Enter matching passwords (min 6 chars)
+2. Submit",Password: newpass123,Success alert then Login screen,
+AUTH-M-027,Auth,Mobile UI,Logout clears session,User logged in on Home,"1. Go to Profile
+2. Tap Logout
+3. Confirm",—,"Token, USER_ID, CRM_USER_ID, MPS session cleared; Login shown",
+AUTH-M-028,Auth,Mobile UI,Social login buttons are UI-only,On Login screen,1. Tap Google/Facebook/Apple,—,No auth flow triggered (visual only),
+AUTH-M-029,Auth,Mobile UI,JWT token persisted after login,Valid login; saveToken fix applied,"1. Login successfully
+2. Check AsyncStorage",Valid credentials,ACCESS_TOKEN contains JWT string,
+AUTH-A-001,Auth,Backend API,Signup - valid user,API running; DB connected; unique email/contact,POST /api/v1/auth/signup with valid body,"name, email, contactNumber, password valid",201; success true; user in DB; password hashed,
+AUTH-A-002,Auth,Backend API,Signup - duplicate email,User with email exists,POST signup with same email,Existing email,400; An account with this email already exists,
+AUTH-A-003,Auth,Backend API,Signup - duplicate contact,Contact already registered,POST signup with same contact,Existing contact,400; This contact number is already registered,
+AUTH-A-004,Auth,Backend API,Signup - invalid email,API running,POST signup with bad email,email: notemail,400; Zod validation message,
+AUTH-A-005,Auth,Backend API,Signup - short password,API running,POST signup,password: 12345,400; validation error,
+AUTH-A-006,Auth,Backend API,Signup - invalid contact format,API running,POST signup,contactNumber: abc,400; regex validation error,
+AUTH-A-007,Auth,Backend API,Login - valid credentials,User exists,POST /api/v1/auth/login,Valid email + password,"200; JWT token; data: id, name, email, role",
+AUTH-A-008,Auth,Backend API,Login - wrong password,User exists,POST login,Wrong password,400; Invalid credentials,
+AUTH-A-009,Auth,Backend API,Login - unknown email,—,POST login,Non-existent email,400; Invalid credentials (no enumeration),
+AUTH-A-010,Auth,Backend API,Login - JWT payload,Successful login,Decode JWT,—,"Payload has id, email, role; expiry ~7 days",
+AUTH-A-011,Auth,Backend API,GET /me - no token,—,GET /api/v1/auth/me without header,—,401; No token provided,
+AUTH-A-012,Auth,Backend API,GET /me - invalid token,—,GET with Bearer invalidtoken,—,401; Unauthorized,
+AUTH-A-013,Auth,Backend API,GET /me - valid token,Valid JWT from login,GET with Bearer token,—,200; profile without password,
+AUTH-A-014,Auth,Backend API,Forgot password - unknown email,—,POST /auth/forgot-password,Unregistered email,404; No account found...,
+AUTH-A-015,Auth,Backend API,Forgot password - sends OTP,Registered user,POST forgot-password,Registered email,200; OTP row in DB; expires in 10 min,
+AUTH-A-016,Auth,Backend API,Resend OTP invalidates old OTP,OTP already sent,POST resend-otp,Same email,200; previous unused OTPs marked used,
+AUTH-A-017,Auth,Backend API,Verify OTP - valid,Fresh OTP,POST verify-otp,"email, otp",200; Verification code confirmed,
+AUTH-A-018,Auth,Backend API,Verify OTP - expired,OTP older than 10 min,POST verify-otp,Expired OTP,400; Invalid or expired verification code,
+AUTH-A-019,Auth,Backend API,Reset password - success,Valid unused OTP,POST reset-password,"email, otp, password",200; password updated; OTP marked used,
+AUTH-A-020,Auth,Backend API,Reset password - reused OTP,OTP already used,POST reset-password,Same OTP again,400; invalid/expired OTP,
+AUTH-A-021,Auth,Backend API,Login with new password after reset,Password reset done,POST login,New password,200; login successful,
+CALC-H-001,Calculators,Mobile UI,Open PlanWealth from Services,User on Services Home,1. Tap PlanWealth tile,—,Calculator hub loads,
+CALC-H-002,Calculators,Mobile UI,All 4 calculators reachable,On hub,"1. Tap EMI, Loan, SIP, Tax",—,Each calculator screen opens,
+CALC-H-003,Calculators,Mobile UI,All planning modules reachable,On hub,"1. Tap Financial Planner, Savings, Goal Planner",—,Each module opens,
+CALC-H-004,Calculators,Mobile UI,Daily tasks preview,Todo storage has tasks,1. View hub daily tasks section,3+ tasks,Up to 3 tasks shown,
+CALC-H-005,Calculators,Mobile UI,Savings progress on hub,Savings goal/entries exist,1. View Savings Tracker card,Target 5000 default if unset,Progress bar shows correct %,
+CALC-H-006,Calculators,Mobile UI,Back from hub returns to Services,On hub,1. Tap back,—,Services Home shown,
+CALC-EMI-001,Calculators,Mobile UI,EMI default values on load,Open EMI from hub,1. Open EMI Calculator,—,"Amount 1L, rate 8.5%, 5 years; EMI calculated",
+CALC-EMI-002,Calculators,Mobile UI,EMI minimum loan amount enforcement,On EMI screen,"1. Enter 9999
+2. Blur field",Principal: 9999,Snaps to 10000,
+CALC-EMI-003,Calculators,Mobile UI,EMI valid calculation,On EMI screen,"1. Set P=10L, rate=10%, tenure=20yr",As above,EMI approx 9650; donut chart renders,
+CALC-EMI-004,Calculators,Mobile UI,EMI zero interest rate,On EMI screen,1. Set rate=0%,Rate: 0,EMI = Principal / months; no crash,
+CALC-EMI-005,Calculators,Mobile UI,EMI invalid inputs show warning,On EMI screen,1. Clear tenure or set P < 10K,—,Summary shows dash; warning message,
+CALC-EMI-006,Calculators,Mobile UI,EMI extra monthly payment,Valid loan entered,1. Add extra 5000/month,Extra: 5000,Shows interest saved + months saved,
+CALC-EMI-007,Calculators,Mobile UI,EMI tenure years to months toggle,On EMI screen,1. Switch Years to Months,5 years,Converts to 60 months,
+CALC-EMI-008,Calculators,Mobile UI,EMI open from Financial Planner,Planner has loans,"1. Planner > Loans > Open EMI
+2. Back",—,Returns to Planner (not hub),
+CALC-LOAN-001,Calculators,Mobile UI,Loan default values,Open Loan Calculator,1. Open screen,—,"500000, 9%, 5 years",
+CALC-LOAN-002,Calculators,Mobile UI,Loan EMI recalculates on tenure change,On Loan screen,1. Change tenure to 10 years,Tenure: 10,EMI decreases vs 5 years,
+CALC-LOAN-003,Calculators,Mobile UI,Loan minimum principal,On Loan screen,"1. Enter 5000; blur",—,Snaps to 10000,
+CALC-LOAN-004,Calculators,Mobile UI,Loan no extra payment section,On Loan screen,1. Inspect UI,—,Extra payment UI not present,
+CALC-SIP-001,Calculators,Mobile UI,SIP default calculation,Open SIP Calculator,1. Open with defaults,"5000/mo, 12%, 10yr","FV, total invested, returns shown",
+CALC-SIP-002,Calculators,Mobile UI,SIP minimum amount,On SIP screen,"1. Enter 400; blur",—,Snaps to 500,
+CALC-SIP-003,Calculators,Mobile UI,SIP zero return rate,On SIP screen,1. Set return=0%,Return: 0,FV = total invested; returns = 0,
+CALC-SIP-004,Calculators,Mobile UI,SIP quarterly vs monthly,On SIP screen,"1. Run monthly
+2. Switch to quarterly",Same amount/years/rate,Quarterly FV lower (fewer periods),
+CALC-SIP-005,Calculators,Mobile UI,SIP invalid inputs,On SIP screen,1. Set SIP < 500 or years < 1,—,Warning; results show dash,
+CALC-TAX-001,Calculators,Mobile UI,Tax calculate disabled without income,On Tax screen,"1. Open Individual new regime
+2. Leave income empty",—,Calculate button disabled,
+CALC-TAX-002,Calculators,Mobile UI,Tax Individual new regime,On Tax screen,"1. Individual new age<60
+2. Salary 15L
+3. Calculate",Salary: 1500000,Tax breakdown; std ded 75K; slabs shown,
+CALC-TAX-003,Calculators,Mobile UI,Tax regime comparison,Individual selected,1. Calculate with income,Salary: 12L,New vs old regime comparison card,
+CALC-TAX-004,Calculators,Mobile UI,Tax taxpayer type switch clears result,Result already shown,1. Change to HUF,—,Previous result cleared,
+CALC-TAX-005,Calculators,Mobile UI,Tax old regime 80C cap,Old regime Individual,"1. Enter 80C 2L
+2. Calculate",80C: 200000,Engine caps at 1.5L,
+CALC-TAX-006,Calculators,Mobile UI,Tax domestic company flat rate,On Tax screen,"1. Select Domestic Company
+2. Enter income
+3. Calculate",Income: 50L,Flat rate applied per config,
+CALC-TAX-007,Calculators,Mobile UI,Tax Co-op 115BAD option,Co-operative selected,"1. Check 115BAD
+2. Calculate",Income: 10L,22% flat rate applied,
+CALC-TODO-001,Calculators,Mobile UI,Todo empty state,Clear @mpsconnect/todo_tasks,1. Open Todo List,—,No tasks yet message,
+CALC-TODO-002,Calculators,Mobile UI,Todo create task,Empty list,"1. FAB new task
+2. Fill form
+3. Save","Title: Pay premium; Due: Today; Priority: High",Task appears in list,
+CALC-TODO-003,Calculators,Mobile UI,Todo title required,On Todo Form,"1. Leave title empty
+2. Save",—,Alert: Title required,
+CALC-TODO-004,Calculators,Mobile UI,Todo complete with undo,Task exists,"1. Check complete
+2. Tap Undo within 5s",—,Task marked incomplete again,
+CALC-TODO-005,Calculators,Mobile UI,Todo filter Today,Tasks with mixed due dates,1. Select Today filter,—,Only today + no-due-date tasks,
+CALC-TODO-006,Calculators,Mobile UI,Todo search,Multiple tasks,1. Search premium,Query: premium,Matching tasks only,
+CALC-TODO-007,Calculators,Mobile UI,Todo delete task,Task in edit mode,"1. Open task
+2. Delete
+3. Confirm",—,Task removed; persists after reload,
+CALC-TODO-008,Calculators,Mobile UI,Todo persistence after restart,Task saved,"1. Kill app
+2. Reopen Todo",—,Task still present,
+CALC-SAV-001,Calculators,Mobile UI,Savings empty dashboard,Clear savings storage,1. Open Savings Tracker,—,No entries yet message,
+CALC-SAV-002,Calculators,Mobile UI,Savings add entry calculation,On Add Entry,"1. Add Groceries old 10K new 7K monthly
+2. Save",As above,Dashboard shows 3K saved; 30% rate,
+CALC-SAV-003,Calculators,Mobile UI,Savings item name required,On Add Entry,"1. Leave name empty
+2. Save",—,Validation prevents save,
+CALC-SAV-004,Calculators,Mobile UI,Savings at least one cost required,On Add Entry,1. Leave both costs 0,—,Validation error,
+CALC-SAV-005,Calculators,Mobile UI,Savings newCost > oldCost,On Add Entry,"1. Old 5K, New 8K",—,Saved amount = 0 (not negative),
+CALC-SAV-006,Calculators,Mobile UI,Savings month navigation,Entry in current month,1. Navigate to prev month,—,Metrics reflect that month only,
+CALC-SAV-007,Calculators,Mobile UI,Savings compare periods,Entries in 2 months,"1. Open Compare
+2. Select periods",—,Category breakdown + insight text,
+CALC-SAV-008,Calculators,Mobile UI,Savings set goal,On Goals screen,"1. Set target rate 40%
+2. Save",Rate: 40,Hub progress uses new target,
+CALC-SAV-009,Calculators,Mobile UI,Savings yearly recurrence,Add yearly entry Jan 2025,1. View Jan 2026,—,Entry contributes in Jan 2026 only,
+CALC-FP-001,Calculators,Mobile UI,Planner first visit forces income,Clear financial storage,1. Open Financial Planner,—,Income Details overlay shown,
+CALC-FP-002,Calculators,Mobile UI,Planner back without income exits,Income overlay on first visit,1. Tap back,—,Returns to calculator hub,
+CALC-FP-003,Calculators,Mobile UI,Planner save income,On Income Details,"1. Enter salary 1L
+2. Save",Salary: 100000,Snapshot tab shown,
+CALC-FP-004,Calculators,Mobile UI,Planner income save disabled when zero,On Income Details,1. Leave salary empty,—,Save button disabled,
+CALC-FP-005,Calculators,Mobile UI,Planner add expense,Income saved,"1. Expenses tab FAB
+2. Add 30K expense this month",Amount: 30000,Expense in list; snapshot updates,
+CALC-FP-006,Calculators,Mobile UI,Planner add loan EMI,Income saved,"1. Loans add Home Loan
+2. EMI 20K",EMI: 20000,Total EMI in snapshot,
+CALC-FP-007,Calculators,Mobile UI,Planner surplus calculation,"Salary 1L, expense 30K, EMI 20K",1. View Snapshot,—,Surplus 50K; capacity 50%,
+CALC-FP-008,Calculators,Mobile UI,Planner negative surplus display,Expenses + EMI > income,1. Add high expense,—,Red surplus; capacity 0%,
+CALC-FP-009,Calculators,Mobile UI,Planner expense wrong month excluded,Expense dated last month,1. View current month snapshot,—,Expense not in current total,
+CALC-FP-010,Calculators,Mobile UI,Planner delete expense,Expense exists,"1. Long-press delete
+2. Confirm",—,Expense removed,
+CALC-FP-011,Calculators,Mobile UI,Planner recommendations shown,Profile with data,1. Open Recommendations,—,Rule-based tips displayed,
+CALC-FP-012,Calculators,Mobile UI,Planner EMI shortcut from loans,Loans screen,"1. Tap Open EMI Calculator
+2. Back",—,Returns to Loans overlay,
+CALC-FG-001,Calculators,Mobile UI,Goal complete wizard flow,Open Goal Planner,"1. Welcome through Result
+2. View full plan",Child Education 5L 12yr,Summary + Result with SIP and lumpsum,
+CALC-FG-002,Calculators,Mobile UI,Goal personal name validation,Step 3,"1. Enter name A
+2. Try Next",Name: A,Next disabled (min 2 chars),
+CALC-FG-003,Calculators,Mobile UI,Goal personal age range,Step 3,1. Enter age 17 or 81,Age: 17,Next disabled (18-80),
+CALC-FG-004,Calculators,Mobile UI,Goal details min target,Step 4,1. Enter target 5K,—,Clamped to 10000,
+CALC-FG-005,Calculators,Mobile UI,Goal emergency fund auto-target,Emergency goal selected,"1. Set expense 50K
+2. Select 12 months backup",12 months,Target auto 600000,
+CALC-FG-006,Calculators,Mobile UI,Goal investment exceeds FV,Step 4,1. Set investment > inflated FV,High investment,Still required = 0; no crash,
+CALC-FG-007,Calculators,Mobile UI,Goal start over resets wizard,On Result screen,1. Tap Start over,—,Returns to Welcome; form cleared,
+CALC-FG-008,Calculators,Mobile UI,Goal no persistence,Complete wizard,"1. Close planner
+2. Reopen",—,Wizard starts fresh (no saved data),

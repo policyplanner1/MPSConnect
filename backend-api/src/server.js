@@ -29,6 +29,7 @@ app.use(
     origin: true,
     allowedHeaders: [
       "content-type",
+      "authorization",
       ...require("supertokens-node").getAllCORSHeaders(),
     ],
     credentials: true,
@@ -88,6 +89,17 @@ app.use("/api/v1/notifications", notificationRoutes);
 const supportRoutes = require("./modules/support/support.routes");
 app.use("/api/v1/support", supportRoutes);
 
+// Document vault
+const documentRoutes = require("./modules/document-vault/document.routes");
+const {
+  ensureDefaultDocumentCategory,
+} = require("./modules/document-vault/document.service");
+app.use("/api/v1/documents", documentRoutes);
+
+ensureDefaultDocumentCategory().catch((error) => {
+  console.error("Failed to seed default document category:", error);
+});
+
 app.use(errorHandler());
 
 const PORT = process.env.PORT || 5000;
@@ -98,5 +110,7 @@ app.listen(PORT, HOST, () => {
   console.log(`Auth signup:  POST http://localhost:${PORT}/api/v1/auth/signup`);
   console.log(`Forgot password: POST http://localhost:${PORT}/api/v1/auth/forgot-password`);
   console.log(`FCM token:     POST http://localhost:${PORT}/api/v1/notifications/fcm-token`);
+  console.log(`Documents:     GET  http://localhost:${PORT}/api/v1/documents`);
+  console.log(`Doc upload:    POST http://localhost:${PORT}/api/v1/documents/upload`);
   startOrderStatusPolling();
 });

@@ -61,6 +61,8 @@ declare module '@env' {
   export const API_BASE_URL: string | undefined;
   /** Optional. When set, login/signup and other `/auth/*` calls use this host instead of `API_BASE_URL`. */
   export const AUTH_API_BASE_URL: string | undefined;
+  /** Optional. DocVault `/documents/*` on local Node server (default: `AUTH_API_BASE_URL` or `http://<host>:5000/api/v1`). */
+  export const DOCUMENTS_API_BASE_URL: string | undefined;
   export const IMAGE_BASE_URL: string | undefined;
   /** MPS client-credentials OAuth (POST …/mps/auth/oauth/token). */
   export const MPS_CLIENT_ID: string | undefined;

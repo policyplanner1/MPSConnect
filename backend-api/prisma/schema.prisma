@@ -43,6 +43,7 @@ model document {
 
   @@index([categoryId], map: "Document_categoryId_fkey")
   @@index([uploadedById], map: "Document_uploadedById_fkey")
+  @@map("Document")
 }
 
 model documentcategory {
@@ -52,6 +53,8 @@ model documentcategory {
   createdAt   DateTime   @default(now())
   updatedAt   DateTime
   document    document[]
+
+  @@map("DocumentCategory")
 }
 
 model passwordreset {

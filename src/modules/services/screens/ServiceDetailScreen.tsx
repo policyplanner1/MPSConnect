@@ -34,9 +34,13 @@ import {
 } from '../../../core/utils/crmUserSession';
 import { addServiceCartItem, getServiceCartErrorMessage } from '../api/serviceCartApi';
 import { validateEnquiryForm } from '../utils/enquiryValidation';
+import { contactFromProfile, extractContactFromForm, mergeContactValues } from '../utils/serviceContact';
+import { TAX_FILING_CATEGORY_ID } from '../IncomeTax/constants';
+import { getCurrentUser } from '../../../services/auth.service';
 
 type Props = {
   serviceId: number;
+  fromCategoryId?: number;
   onBack: () => void;
   onOpenCart?: () => void;
   onOpenNotifications?: () => void;
@@ -328,7 +332,7 @@ function FaqSection({ sections }: { sections: ServiceSection[] }) {
           style={styles.faqItem}>
           <View style={styles.faqQuestion}>
             <View style={styles.faqToggleBox}>
-              <Text style={styles.faqToggleChar}>{openIndex === i ? '−' : '+'}</Text>
+              <Text style={[styles.faqToggleChar, inter18('bold')]}>{openIndex === i ? '−' : '+'}</Text>
             </View>
             <Text style={[styles.faqQuestionText, inter18('semiBold')]}>{item.question}</Text>
           </View>
@@ -417,7 +421,7 @@ function DocumentsSection({ documents }: { documents: ServiceDocument[] }) {
               inter18('semiBold'),
               tab === 'store' && styles.docTabTextActive,
             ]}>
-            Store Visit
+            Office Visit
           </Text>
         </Pressable>
         <Pressable
@@ -453,13 +457,13 @@ function DocumentsSection({ documents }: { documents: ServiceDocument[] }) {
           onPress={() => setExpanded(!expanded)}
           style={styles.viewAllBtn}>
           <ChevronDownIcon flipped={expanded} />
-          <Text style={styles.viewAllText}>{expanded ? 'View less' : 'View all'}</Text>
+          <Text style={[styles.viewAllText, inter18('semiBold')]}>{expanded ? 'View less' : 'View all'}</Text>
         </Pressable>
       )}
 
       {/* Share */}
       <Pressable style={styles.shareDocBtn}>
-        <Text style={styles.shareDocText}>Share</Text>
+        <Text style={[styles.shareDocText, inter18('bold')]}>Share</Text>
         <WhatsAppIcon />
       </Pressable>
     </View>
@@ -497,9 +501,10 @@ type EnquiryFormProps = {
   apiFields: EnquiryField[];
   serviceId: number;
   variantId: number;
+  onValuesChange?: (values: Record<string, string>) => void;
 };
 
-function EnquiryForm({ apiFields, serviceId, variantId }: EnquiryFormProps) {
+function EnquiryForm({ apiFields, serviceId, variantId, onValuesChange }: EnquiryFormProps) {
   const fields = resolveEnquiryFields(apiFields);
   const [values, setValues] = useState<Record<string, string>>({});
   const [errors, setErrors] = useState<Record<string, string>>({});
@@ -507,8 +512,37 @@ function EnquiryForm({ apiFields, serviceId, variantId }: EnquiryFormProps) {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [successRef, setSuccessRef] = useState<string | null>(null);
 
+  React.useEffect(() => {
+    let cancelled = false;
+    void getCurrentUser()
+      .then(profile => {
+        if (cancelled) {
+          return;
+        }
+        const contact = contactFromProfile(profile);
+        setValues(prev => {
+          const next = {
+            ...prev,
+            ...(contact.name && !prev.name?.trim() ? { name: contact.name } : {}),
+            ...(contact.mobile && !prev.mobile?.trim() ? { mobile: contact.mobile } : {}),
+            ...(contact.email && !prev.email?.trim() ? { email: contact.email } : {}),
+          };
+          onValuesChange?.(next);
+          return next;
+        });
+      })
+      .catch(() => undefined);
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
   const setValue = (name: string, val: string) => {
-    setValues(prev => ({ ...prev, [name]: val }));
+    setValues(prev => {
+      const next = { ...prev, [name]: val };
+      onValuesChange?.(next);
+      return next;
+    });
     if (errors[name]) {
       setErrors(prev => {
         const next = { ...prev };
@@ -537,7 +571,15 @@ function EnquiryForm({ apiFields, serviceId, variantId }: EnquiryFormProps) {
       return;
     }
 
-    const payload = mapFormToEnquiryPayload(values, serviceId, variantId, userId);
+    let profile = null;
+    try {
+      profile = await getCurrentUser();
+    } catch {
+      profile = null;
+    }
+
+    const mergedValues = mergeContactValues(values, profile);
+    const payload = mapFormToEnquiryPayload(mergedValues, serviceId, variantId, userId);
 
     setIsSubmitting(true);
     setErrors({});
@@ -590,7 +632,7 @@ function EnquiryForm({ apiFields, serviceId, variantId }: EnquiryFormProps) {
           <View key={field.field_name} style={styles.formField}>
             <Text style={[styles.formLabel, inter18('medium')]}>
               {field.is_required === 1 && (
-                <Text style={styles.required}>*</Text>
+                <Text style={[styles.required, inter18('medium')]}>*</Text>
               )}
               {field.label}
             </Text>
@@ -703,6 +745,7 @@ function EnquiryForm({ apiFields, serviceId, variantId }: EnquiryFormProps) {
 
 export default function ServiceDetailScreen({
   serviceId,
+  fromCategoryId,
   onBack,
   onOpenCart,
   onOpenNotifications,
@@ -722,6 +765,7 @@ export default function ServiceDetailScreen({
   const scrollRef = useRef<ScrollView>(null);
   const contentYRef = useRef(0);
   const enquiryOffsetYRef = useRef(0);
+  const enquiryValuesRef = useRef<Record<string, string>>({});
 
   const handleCtaPress = async () => {
     if (!onOpenCart || !service || variants.length === 0) {
@@ -742,6 +786,28 @@ export default function ServiceDetailScreen({
     }
 
     const v = variants[selectedIndex];
+    let profile = null;
+    try {
+      profile = await getCurrentUser();
+    } catch {
+      profile = null;
+    }
+    const mergedContact = extractContactFromForm(
+      mergeContactValues(enquiryValuesRef.current, profile),
+    );
+
+    if (!mergedContact.name.trim() || !mergedContact.mobile.trim()) {
+      Alert.alert(
+        'Contact details required',
+        'Please add your name and mobile number in your profile, or fill the enquiry form below before buying.',
+      );
+      scrollRef.current?.scrollTo({
+        y: contentYRef.current + enquiryOffsetYRef.current,
+        animated: true,
+      });
+      return;
+    }
+
     setIsAddingToCart(true);
     try {
       await addServiceCartItem({
@@ -749,6 +815,8 @@ export default function ServiceDetailScreen({
         service_id: service.id,
         variant_id: v.id,
         quantity: 1,
+        name: mergedContact.name,
+        mobile: mergedContact.mobile,
       });
       onOpenCart();
     } catch (error) {
@@ -758,10 +826,19 @@ export default function ServiceDetailScreen({
     }
   };
 
+  const isTaxFlow =
+    fromCategoryId === TAX_FILING_CATEGORY_ID ||
+    service?.category_id === TAX_FILING_CATEGORY_ID;
+
   if (loading) {
     return (
       <SafeAreaView style={styles.safeArea}>
-        <AppScreenHeader variant="search" onBack={onBack} searchPlaceholder="Search services" />
+        <AppScreenHeader
+          variant="search"
+          onBack={onBack}
+          searchPlaceholder="Search services"
+          showWallet={!isTaxFlow}
+        />
         <View style={styles.centered}>
           <ActivityIndicator size="large" color="#6D28D9" />
         </View>
@@ -772,7 +849,12 @@ export default function ServiceDetailScreen({
   if (error || !service || variants.length === 0) {
     return (
       <SafeAreaView style={styles.safeArea}>
-        <AppScreenHeader variant="search" onBack={onBack} searchPlaceholder="Search services" />
+        <AppScreenHeader
+          variant="search"
+          onBack={onBack}
+          searchPlaceholder="Search services"
+          showWallet={!isTaxFlow}
+        />
         <View style={styles.centered}>
           <Text style={[styles.errorText, inter18('regular')]}>{error ?? 'Service not found'}</Text>
         </View>
@@ -783,13 +865,11 @@ export default function ServiceDetailScreen({
   const variant = variants[selectedIndex];
   const variantImageUri = `${IMAGE_BASE_URL}/${variant.image_url}`;
   const price = parseFloat(variant.price);
-  const originalPrice = parseFloat(variant.original_price);
-  const rewardPoints = Math.max(0, originalPrice - price);
-  const cashPrice = Math.max(0, price - rewardPoints);
-  const showRewardSplit = rewardPoints > 0 && cashPrice > 0;
+  const isTaxService = isTaxFlow;
 
   const walletBalance = `₹${price.toLocaleString('en-IN', { maximumFractionDigits: 0 })}`;
   const searchPlaceholder = `Search "${service.name}"`;
+  const buyNowLabel = `Buy now ₹${price.toLocaleString('en-IN', { maximumFractionDigits: 0 })}`;
 
   return (
     <SafeAreaView style={styles.safeArea}>
@@ -798,8 +878,9 @@ export default function ServiceDetailScreen({
         onBack={onBack}
         searchPlaceholder={searchPlaceholder}
         onNotificationPress={onOpenNotifications}
-        onWalletPress={onOpenRewards}
-        walletBalance={walletBalance}
+        onWalletPress={isTaxService ? undefined : onOpenRewards}
+        walletBalance={isTaxService ? undefined : walletBalance}
+        showWallet={!isTaxService}
         notificationCount={1}
       />
       <ScrollView
@@ -878,20 +959,6 @@ export default function ServiceDetailScreen({
           {/* Description */}
           <Text style={[styles.description, inter18('regular')]}>{variant.short_description}</Text>
 
-          {/* Offer Banner */}
-          <View style={styles.offerBanner}>
-            <View style={styles.offerIconWrap}>
-              <Text style={styles.offerEmoji}>🎁</Text>
-            </View>
-            <View style={styles.offerTextWrap}>
-              <Text style={[styles.offerBold, inter18('bold')]}>Upto 50% Off on renewal</Text>
-              <Text style={[styles.offerSub, inter18('regular')]}>Offer valid today</Text>
-            </View>
-            <View style={styles.offerBadge}>
-              <Text style={[styles.offerBadgeText, inter18('semiBold')]}>Offer valid today</Text>
-            </View>
-          </View>
-
           {/* CTA Button */}
           <Pressable
             style={[styles.ctaBtn, isAddingToCart && styles.ctaBtnDisabled]}
@@ -900,11 +967,7 @@ export default function ServiceDetailScreen({
             {isAddingToCart ? (
               <ActivityIndicator color="#FFFFFF" size="small" />
             ) : (
-              <Text style={[styles.ctaBtnText, inter18('bold')]}>
-                {showRewardSplit
-                  ? `₹${cashPrice.toFixed(0)} + ⭐ ${rewardPoints.toFixed(0)}`
-                  : `₹${price.toFixed(0)}`}
-              </Text>
+              <Text style={[styles.ctaBtnText, inter18('bold')]}>{buyNowLabel}</Text>
             )}
           </Pressable>
 
@@ -962,6 +1025,9 @@ export default function ServiceDetailScreen({
               apiFields={enquiryFields}
               serviceId={service.id}
               variantId={variant.id}
+              onValuesChange={values => {
+                enquiryValuesRef.current = values;
+              }}
             />
           </View>
 

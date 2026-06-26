@@ -24,7 +24,7 @@ export default function ExploreHeader({
       profileInitials={userInitials}
       profileImageUri={profileImageUri}
       userName={userName}
-      greeting="Hello!"
+      greeting="Hi!"
       notificationCount={notificationCount}
       onNotificationPress={onNotificationPress}
       onProfilePress={onProfilePress}

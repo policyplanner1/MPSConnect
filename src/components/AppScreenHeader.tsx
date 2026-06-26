@@ -142,6 +142,7 @@ export type AppScreenHeaderSearchProps = HeaderCallbacks & {
   onFavoritesPress?: () => void;
   onWalletPress?: () => void;
   walletBalance?: string;
+  showWallet?: boolean;
   notificationCount?: number;
 };
 
@@ -191,6 +192,7 @@ function SearchVariant({
   onWalletPress,
   onNotificationPress,
   walletBalance = '₹6,549',
+  showWallet = true,
   notificationCount = 1,
 }: AppScreenHeaderSearchProps) {
   return (
@@ -225,24 +227,26 @@ function SearchVariant({
           <HeartIcon />
         </Pressable>
 
-        <Pressable
-          onPress={onWalletPress}
-          disabled={!onWalletPress}
-          style={styles.walletWrap}
-          hitSlop={4}
-          accessibilityLabel="Wallet balance">
-          <View style={styles.walletCircle}>
-            <View style={styles.walletStar}>
-              <Text style={styles.walletStarText}>★</Text>
+        {showWallet ? (
+          <Pressable
+            onPress={onWalletPress}
+            disabled={!onWalletPress}
+            style={styles.walletWrap}
+            hitSlop={4}
+            accessibilityLabel="Wallet balance">
+            <View style={styles.walletCircle}>
+              <View style={styles.walletStar}>
+                <Text style={styles.walletStarText}>★</Text>
+              </View>
+              <WalletIcon />
             </View>
-            <WalletIcon />
-          </View>
-          <View style={styles.walletPill}>
-            <Text style={[styles.walletPillText, inter18('bold')]} numberOfLines={1}>
-              {walletBalance}
-            </Text>
-          </View>
-        </Pressable>
+            <View style={styles.walletPill}>
+              <Text style={[styles.walletPillText, inter18('bold')]} numberOfLines={1}>
+                {walletBalance}
+              </Text>
+            </View>
+          </Pressable>
+        ) : null}
 
         <Pressable
           onPress={onNotificationPress}

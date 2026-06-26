@@ -23,10 +23,12 @@ import {
 } from '../api/orderCancellationApi';
 import GradientSubmitButton from '../components/GradientSubmitButton';
 import OrderCancelServiceCard from '../components/OrderCancelServiceCard';
+import { setOrderStatusOverride } from '../services/orderStatusOverrides';
 import type {
   CancellationReason,
   OrderCancelContext,
 } from '../types/orderCancellation.types';
+import { isAlreadyCancelledMessage } from '../utils/orderStatus';
 
 const OTHER_REASON_ID = 8;
 /** Matches Home / My requests scroll padding above `ServicesBottomTabBar`. */
@@ -51,12 +53,14 @@ type RequestCancellationScreenProps = {
   order: OrderCancelContext;
   onBack: () => void;
   onSubmitted: (serviceOrderId: number) => void;
+  onAlreadyCancelled?: (serviceOrderId: number) => void;
 };
 
 export default function RequestCancellationScreen({
   order,
   onBack,
   onSubmitted,
+  onAlreadyCancelled,
 }: RequestCancellationScreenProps) {
   const insets = useSafeAreaInsets();
   const [reasons, setReasons] = useState<CancellationReason[]>([]);
@@ -112,9 +116,31 @@ export default function RequestCancellationScreen({
         comment: commentTrim,
       });
 
+      if (order.parentOrderId) {
+        await setOrderStatusOverride({
+          parentOrderId: order.parentOrderId,
+          serviceOrderId: order.serviceOrderId,
+          status: 'cancelled',
+        });
+      }
+
       onSubmitted(order.serviceOrderId);
     } catch (e) {
-      Alert.alert('Could not submit', getOrderCancellationErrorMessage(e));
+      const message = getOrderCancellationErrorMessage(e);
+      if (isAlreadyCancelledMessage(message)) {
+        if (order.parentOrderId) {
+          await setOrderStatusOverride({
+            parentOrderId: order.parentOrderId,
+            serviceOrderId: order.serviceOrderId,
+            status: 'cancelled',
+          });
+        }
+        if (onAlreadyCancelled) {
+          onAlreadyCancelled(order.serviceOrderId);
+          return;
+        }
+      }
+      Alert.alert('Could not submit', message);
     } finally {
       setSubmitting(false);
     }

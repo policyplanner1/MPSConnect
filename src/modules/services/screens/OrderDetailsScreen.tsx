@@ -14,6 +14,7 @@ import { FORCE_SERVICE_FEEDBACK } from '../../../config/env';
 import { inter18 } from '../../../core/theme/typography';
 import { getCrmEnquiryUserId } from '../../../core/utils/crmUserSession';
 import { useOrderDetails } from '../hooks/useOrderDetails';
+import { useOrderCancellationState } from '../hooks/useOrderCancellationState';
 import { payExistingParentOrder } from '../api/servicePaymentApi';
 import CancelOrderConfirmModal from '../components/CancelOrderConfirmModal';
 import ServiceFeedbackForm from '../components/ServiceFeedbackForm';
@@ -101,12 +102,18 @@ function Timeline({ steps }: { steps: OrderDetailsTimelineStep[] }) {
   );
 }
 
-function ItemCard({ data }: { data: OrderDetailsData }) {
+function ItemCard({
+  data,
+  displayStatus,
+}: {
+  data: OrderDetailsData;
+  displayStatus: string;
+}) {
   const item = data.items?.[0];
   if (!item) {
     return null;
   }
-  const badge = statusMeta(item.status || data.status);
+  const badge = statusMeta(displayStatus || item.status || data.status);
   return (
     <View style={styles.card}>
       <View style={styles.cardTop}>
@@ -147,8 +154,14 @@ function ItemCard({ data }: { data: OrderDetailsData }) {
   );
 }
 
-function SummaryCard({ data }: { data: OrderDetailsData }) {
-  const badge = statusMeta(data.status);
+function SummaryCard({
+  data,
+  displayStatus,
+}: {
+  data: OrderDetailsData;
+  displayStatus: string;
+}) {
+  const badge = statusMeta(displayStatus || data.status);
   return (
     <View style={styles.card}>
       <View style={styles.cardTop}>
@@ -207,6 +220,10 @@ export default function OrderDetailsScreen({
   onViewAllOrders?: () => void;
 }) {
   const { data, loading, error, refetch } = useOrderDetails(parentOrderId);
+  const { displayStatus, isCancelled, rememberCancelled } = useOrderCancellationState(
+    parentOrderId,
+    data,
+  );
   const [paying, setPaying] = useState(false);
   const [devPreviewFeedback, setDevPreviewFeedback] = useState(false);
   const [cancelModalVisible, setCancelModalVisible] = useState(false);
@@ -214,18 +231,16 @@ export default function OrderDetailsScreen({
   const [cancelServiceOrderId, setCancelServiceOrderId] = useState<number | null>(null);
 
   const firstItem = useMemo(() => data?.items?.[0] ?? null, [data?.items]);
-  const canPayNow = String(data?.status ?? '').toLowerCase().includes('pending_payment');
-  const canCancel = Boolean(firstItem?.cancellation?.can_cancel);
-  const isCancelled = useMemo(() => {
-    const s = String(firstItem?.status ?? data?.status ?? '').toLowerCase();
-    return s.includes('cancel');
-  }, [firstItem?.status, data?.status]);
+  const canPayNow =
+    !isCancelled && String(displayStatus || data?.status || '').toLowerCase().includes('pending_payment');
+  const canCancel = Boolean(firstItem?.cancellation?.can_cancel) && !isCancelled;
 
   const cancelContext = useMemo<OrderCancelContext | null>(() => {
     if (!firstItem) {
       return null;
     }
     return {
+      parentOrderId,
       serviceOrderId: firstItem.id,
       serviceName: firstItem.service_name,
       variantName: firstItem.variant_name,
@@ -234,7 +249,7 @@ export default function OrderDetailsScreen({
       imageUrl: firstItem.image_url,
       rewardCoinsSaved: 0,
     };
-  }, [firstItem]);
+  }, [firstItem, parentOrderId]);
 
   const orderRefLabel = useMemo(() => {
     const ref = firstItem?.order_ref;
@@ -296,9 +311,15 @@ export default function OrderDetailsScreen({
         onBack={() => {
           setCancelFlow(null);
         }}
-        onSubmitted={serviceOrderId => {
+        onSubmitted={async serviceOrderId => {
+          await rememberCancelled(serviceOrderId);
           setCancelServiceOrderId(serviceOrderId);
           setCancelFlow('confirmed');
+        }}
+        onAlreadyCancelled={async serviceOrderId => {
+          await rememberCancelled(serviceOrderId);
+          setCancelServiceOrderId(serviceOrderId);
+          setCancelFlow('details');
         }}
       />
     );
@@ -371,7 +392,7 @@ export default function OrderDetailsScreen({
           showsVerticalScrollIndicator={false}
           contentContainerStyle={styles.scroll}
           refreshControl={<RefreshControl refreshing={loading} onRefresh={refetch} tintColor="#5E02AF" />}>
-          <ItemCard data={data} />
+          <ItemCard data={data} displayStatus={displayStatus} />
 
           {firstItem ? (
             <>

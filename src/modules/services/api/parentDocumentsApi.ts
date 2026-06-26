@@ -1,5 +1,11 @@
 import axios from 'axios';
 
+/**
+ * Service ORDER document uploads (checkout / My Requests).
+ * CRM endpoints: `/parent-documents`, `/submit-documents`.
+ *
+ * For personal DocVault storage use `docVault/api/documentsApi.ts` (local `/api/v1/documents`).
+ */
 import { MPS_SERVICE_BASE_URL } from '../../../config/env';
 import {
   getMpsOAuthAuthorizationHeader,

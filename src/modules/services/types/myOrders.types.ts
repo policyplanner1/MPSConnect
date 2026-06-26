@@ -11,6 +11,7 @@ export type MyOrderLineItem = {
   image_url: string | null;
   price: number;
   bundle_id: number | null;
+  status?: string;
 };
 
 export type MyOrdersSummary = {

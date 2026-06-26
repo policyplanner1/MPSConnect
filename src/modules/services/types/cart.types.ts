@@ -32,6 +32,8 @@ export type AddCartItemPayload = {
   service_id: number;
   variant_id: number;
   quantity: number;
+  name: string;
+  mobile: string;
 };
 
 export type AddCartItemResponse = {

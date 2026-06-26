@@ -15,6 +15,7 @@ import HomeHeroHeader from '../components/HomeHeroHeader';
 import ServicesSectionCard from '../components/ServicesSectionCard';
 import { useMyOrders } from '../hooks/useMyOrders';
 import type { MyOrdersParentOrder } from '../types/myOrders.types';
+import { isCancelledStatus, resolveOrderDisplayStatus, shouldShowInMyRequests } from '../utils/orderStatus';
 import OrderDetailsScreen from './OrderDetailsScreen';
 import UploadDocuments from './UploadDocuments';
 
@@ -51,7 +52,7 @@ function statusMeta(status: string): { label: string; bg: string; fg: string } {
   if (s.includes('paid') || s === 'completed' || s === 'success') {
     return { label: status, bg: '#DCFCE7', fg: '#166534' };
   }
-  if (s.includes('cancel') || s.includes('fail') || s.includes('reject')) {
+  if (isCancelledStatus(s) || s.includes('fail') || s.includes('reject')) {
     return { label: status, bg: '#FEE2E2', fg: '#991B1B' };
   }
   if (s.includes('pending')) {
@@ -67,7 +68,8 @@ function OrderCard({
   order: MyOrdersParentOrder;
   onViewDetails?: (parentOrderId: string) => void;
 }) {
-  const badge = statusMeta(order.status);
+  const displayStatus = resolveOrderDisplayStatus(order);
+  const badge = statusMeta(displayStatus);
 
   const subtitle = useMemo(() => {
     const counts = [];
@@ -190,6 +192,10 @@ export default function MyRequestsScreen({
     handleOpenService(item.service_id);
   };
   const { orders, loading, error, refetch } = useMyOrders();
+  const visibleOrders = useMemo(
+    () => orders.filter(shouldShowInMyRequests),
+    [orders],
+  );
   const [activeParentOrderId, setActiveParentOrderId] = useState<string | null>(null);
   const [uploadState, setUploadState] = useState<{
     parentOrderId: string;
@@ -201,6 +207,11 @@ export default function MyRequestsScreen({
       setActiveParentOrderId(initialParentOrderId);
     }
   }, [initialParentOrderId]);
+
+  const handleCloseOrderDetails = () => {
+    setActiveParentOrderId(null);
+    void refetch();
+  };
 
   if (uploadState) {
     return (
@@ -221,8 +232,8 @@ export default function MyRequestsScreen({
     return (
       <OrderDetailsScreen
         parentOrderId={activeParentOrderId}
-        onBack={() => setActiveParentOrderId(null)}
-        onViewAllOrders={() => setActiveParentOrderId(null)}
+        onBack={handleCloseOrderDetails}
+        onViewAllOrders={handleCloseOrderDetails}
         onUploadDocuments={({ parentOrderId, orderId }) =>
           setUploadState({ parentOrderId, orderId })
         }
@@ -249,7 +260,7 @@ export default function MyRequestsScreen({
       </View>
 
       <View style={styles.contentSheet}>
-        {loading && orders.length === 0 ? (
+        {loading && visibleOrders.length === 0 && orders.length === 0 ? (
           <View style={styles.center}>
             <ActivityIndicator size="small" color="#5E02AF" />
             <Text style={[styles.centerText, inter18('regular')]}>Loading…</Text>
@@ -266,7 +277,7 @@ export default function MyRequestsScreen({
           </View>
         ) : (
           <FlatList
-            data={orders}
+            data={visibleOrders}
             keyExtractor={item => item.parent_order_id}
             contentContainerStyle={styles.listContent}
             showsVerticalScrollIndicator={false}
@@ -282,7 +293,7 @@ export default function MyRequestsScreen({
                   </Text>
                 </View>
 
-                {orders.length === 0 && !loading ? (
+                {visibleOrders.length === 0 && !loading ? (
                   <View style={styles.emptyWrap}>
                     <ServicesSectionCard title="Your orders">
                       <View style={styles.emptyInner}>

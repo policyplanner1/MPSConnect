@@ -134,12 +134,12 @@ function LoginScreen({
       const response = await loginUser(payload);
       await logLoginStorageDebug('after login API (before save)', response);
 
-      // if (!response.token) {
-      //   Alert.alert('Error', 'Login succeeded but no token was returned.');
-      //   return;
-      // }
+      if (!response.token) {
+        Alert.alert('Error', 'Login succeeded but no token was returned.');
+        return;
+      }
 
-      // await saveToken(response.token);
+      await saveToken(response.token);
 
       const userId = extractUserIdFromLoginData(
         response.data as Record<string, unknown> | undefined,

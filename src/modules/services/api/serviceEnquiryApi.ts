@@ -3,7 +3,7 @@ import axios from 'axios';
 import { MPS_SERVICE_ENQUIRY_URL } from '../../../config/env';
 import { getMpsOAuthAuthorizationHeader, getMpsOAuthSession } from '../../../core/utils/mpsOAuthStorage';
 import { ensureMpsOAuthToken } from '../../../services/mpsOAuth.service';
-import { normalizeMobileDigits } from '../utils/enquiryValidation';
+import { extractContactFromForm } from '../utils/serviceContact';
 
 export type ServiceEnquiryPayload = {
   user_id: number;
@@ -13,6 +13,7 @@ export type ServiceEnquiryPayload = {
   city: string;
   mobile: string;
   email: string;
+  message: string;
   enquiry_data: {
     enquiry_type: string;
     message: string;
@@ -34,41 +35,51 @@ export function mapFormToEnquiryPayload(
   variantId: number,
   userId: number,
 ): ServiceEnquiryPayload {
-  const pick = (...keys: string[]): string => {
-    for (const key of keys) {
-      const v = values[key]?.trim();
-      if (v) {
-        return v;
-      }
-    }
-    return '';
-  };
-
-  const mobileRaw = pick('mobile', 'mobile_number', 'phone', 'contact_number');
+  const contact = extractContactFromForm(values);
 
   return {
     user_id: userId,
     service_id: serviceId,
     variant_id: variantId,
-    name: pick('name', 'full_name', 'customer_name'),
-    city: pick('city'),
-    mobile:
-      mobileRaw.replace(/\D/g, '').length >= 10
-        ? normalizeMobileDigits(mobileRaw)
-        : mobileRaw,
-    email: pick('email', 'email_id').toLowerCase(),
+    name: contact.name,
+    city: contact.city,
+    mobile: contact.mobile,
+    email: contact.email,
+    message: contact.message,
     enquiry_data: {
       enquiry_type: 'general',
-      message:
-        pick('message', 'comments', 'enquiry', 'description') ||
-        'I am interested in your services. Please contact me.',
+      message: contact.message,
     },
   };
+}
+
+export function validateEnquiryPayload(payload: ServiceEnquiryPayload): string | null {
+  if (!payload.user_id || payload.user_id < 1) {
+    return 'Please log in again to submit your enquiry.';
+  }
+  if (!payload.service_id || payload.service_id < 1) {
+    return 'Service is missing. Please go back and open the service again.';
+  }
+  if (!payload.variant_id || payload.variant_id < 1) {
+    return 'Please select a service plan before submitting.';
+  }
+  if (!payload.name.trim()) {
+    return 'Name is required.';
+  }
+  if (!payload.mobile.trim()) {
+    return 'Mobile number is required.';
+  }
+  return null;
 }
 
 export async function submitServiceEnquiry(
   payload: ServiceEnquiryPayload,
 ): Promise<ServiceEnquiryResponse> {
+  const validationError = validateEnquiryPayload(payload);
+  if (validationError) {
+    throw new Error(validationError);
+  }
+
   await ensureMpsOAuthToken();
   const session = await getMpsOAuthSession();
   const authHeader = getMpsOAuthAuthorizationHeader(session);

@@ -19,6 +19,9 @@ import ServiceCartScreen from '../screens/ServiceCartScreen';
 import ServiceCheckoutScreen from '../screens/ServiceCheckoutScreen';
 import ServiceDetailScreen from '../screens/ServiceDetailScreen';
 import ServiceListScreen from '../screens/ServiceListScreen';
+import DocVaultScreen from '../docVault/screens/DocVaultScreen';
+import TaxFilingListScreen from '../IncomeTax/screens/TaxFilingListScreen';
+import { TAX_FILING_CATEGORY_ID } from '../IncomeTax/constants';
 import UploadDocuments from '../screens/UploadDocuments';
 import { CheckoutPreviewData } from '../types/cart.types';
 import { ServicesStackReturn } from '../types/navigation.types';
@@ -37,7 +40,9 @@ type ScreenState =
   | { name: 'RewardHistory' }
   | { name: 'ReferAndEarn' }
   | { name: 'Calculators' }
+  | { name: 'DocVault' }
   | { name: 'ServiceList'; categoryId: number; initialServiceId?: number }
+  | { name: 'TaxFilingList'; initialServiceId?: number }
   | { name: 'ServiceDetail'; serviceId: number; fromCategoryId?: number }
   | { name: 'ServiceCart'; returnTo: ServicesStackReturn }
   | {
@@ -103,6 +108,14 @@ function ServicesStack({ onLogout }: ServicesStackProps) {
           name: 'OtherInsurance',
           serviceId,
           service: listService,
+        });
+        return;
+      }
+
+      if (categoryId === TAX_FILING_CATEGORY_ID) {
+        setScreen({
+          name: 'TaxFilingList',
+          initialServiceId: serviceId,
         });
         return;
       }
@@ -188,6 +201,10 @@ function ServicesStack({ onLogout }: ServicesStackProps) {
     return <CalculatorsStack onClose={() => setScreen({ name: 'Home' })} />;
   }
 
+  if (screen.name === 'DocVault') {
+    return <DocVaultScreen onBack={() => setScreen({ name: 'Home' })} />;
+  }
+
   if (screen.name === 'HealthInsurance') {
     return (
       <HealthInsuranceStack
@@ -210,6 +227,24 @@ function ServicesStack({ onLogout }: ServicesStackProps) {
         onBack={() => setScreen({ name: 'ServiceList', categoryId: 2 })}
         serviceId={screen.serviceId}
         service={screen.service}
+      />
+    );
+  }
+
+  if (screen.name === 'TaxFilingList') {
+    return (
+      <TaxFilingListScreen
+        initialServiceId={screen.initialServiceId}
+        onBack={() => setScreen({ name: 'Home' })}
+        onOpenNotifications={openNotifications}
+        onOpenCart={openCartFromHome}
+        onServicePress={(serviceId, _service) => {
+          setScreen({
+            name: 'ServiceDetail',
+            serviceId,
+            fromCategoryId: TAX_FILING_CATEGORY_ID,
+          });
+        }}
       />
     );
   }
@@ -312,10 +347,13 @@ function ServicesStack({ onLogout }: ServicesStackProps) {
     return (
       <ServiceDetailScreen
         serviceId={screen.serviceId}
+        fromCategoryId={screen.fromCategoryId}
         onBack={() =>
-          screen.fromCategoryId
-            ? setScreen({ name: 'ServiceList', categoryId: screen.fromCategoryId })
-            : setScreen({ name: 'Home' })
+          screen.fromCategoryId === TAX_FILING_CATEGORY_ID
+            ? setScreen({ name: 'TaxFilingList' })
+            : screen.fromCategoryId
+              ? setScreen({ name: 'ServiceList', categoryId: screen.fromCategoryId })
+              : setScreen({ name: 'Home' })
         }
         onOpenCart={() =>
           setScreen({
@@ -342,11 +380,13 @@ function ServicesStack({ onLogout }: ServicesStackProps) {
       onGovernmentDocuments={() =>
         setScreen({ name: 'ServiceList', categoryId: 3 })
       }
+      onTaxServicesPress={() => setScreen({ name: 'TaxFilingList' })}
       onInsurancePress={() => setScreen({ name: 'ServiceList', categoryId: 2 })}
       onOpenCart={openCartFromHome}
       onOpenNotifications={openNotifications}
       onOpenRewards={() => setScreen({ name: 'RewardHistory' })}
       onOpenCalculators={() => setScreen({ name: 'Calculators' })}
+      onOpenDocVault={() => setScreen({ name: 'DocVault' })}
       onOpenProfile={() => setScreen({ name: 'Profile' })}
       onServicePress={serviceId => setScreen({ name: 'ServiceDetail', serviceId })}
       onOpenService={openServiceById}

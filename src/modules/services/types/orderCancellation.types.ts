@@ -65,6 +65,7 @@ export type CancellationDetailsResponse = {
 };
 
 export type OrderCancelContext = {
+  parentOrderId?: string;
   serviceOrderId: number;
   serviceName: string;
   variantName?: string | null;

@@ -4,6 +4,7 @@ import Svg, { Path } from 'react-native-svg';
 
 import { inter18 } from '../../../core/theme/typography';
 import type { ExploreServiceItem } from '../data/exploreData';
+import { resolveExploreServiceIcon } from '../data/exploreServiceIcons';
 
 type ServiceCardProps = {
   service: ExploreServiceItem;
@@ -31,7 +32,9 @@ export default function ServiceCard({
   onPress,
   onWishlistPress,
 }: ServiceCardProps) {
-  const cta = service.ctaLabel ?? 'Book Now';
+  const cta = service.ctaLabel ?? 'Apply now';
+  const topLabel = service.priceLabel ?? service.tag;
+  const IconComponent = resolveExploreServiceIcon(service.iconKey);
 
   return (
     <Pressable
@@ -42,9 +45,9 @@ export default function ServiceCard({
         pressed && { opacity: 0.94 },
       ]}>
       <View style={styles.topRow}>
-        {service.tag ? (
+        {topLabel ? (
           <View style={styles.tag}>
-            <Text style={[styles.tagText, inter18('bold')]}>{service.tag}</Text>
+            <Text style={[styles.tagText, inter18('bold')]}>{topLabel}</Text>
           </View>
         ) : (
           <View />
@@ -59,10 +62,17 @@ export default function ServiceCard({
       </View>
 
       <View style={[styles.iconWrap, compact && styles.iconWrapCompact]}>
-        <Text style={[styles.emoji, compact && styles.emojiCompact]}>{service.emoji}</Text>
+        {IconComponent ? (
+          <IconComponent width={compact ? 56 : 64} height={compact ? 56 : 64} />
+        ) : service.emoji ? (
+          <Text style={[styles.emoji, compact && styles.emojiCompact]}>{service.emoji}</Text>
+        ) : null}
       </View>
 
-      <Text style={[styles.title, inter18('bold')]} numberOfLines={2}>
+      <Text
+        style={[styles.title, inter18('bold')]}
+        numberOfLines={1}
+        ellipsizeMode="tail">
         {service.title}
       </Text>
       <Text style={[styles.description, inter18('regular')]} numberOfLines={2}>

@@ -5,8 +5,9 @@ import Svg, { Circle, Defs, LinearGradient, Path, Rect, Stop } from 'react-nativ
 import { inter18 } from '../../../core/theme/typography';
 import HomeSearchBar from './HomeSearchBar';
 
-const HOME_GRADIENT_TOP = '#8B7CF6';
-const HOME_GRADIENT_BOTTOM = '#6A5AE0';
+export const HOME_GRADIENT_TOP = '#8B7CF6';
+export const HOME_GRADIENT_BOTTOM = '#6A5AE0';
+export const HOME_HERO_CURVE_RADIUS = 40;
 
 // ─── Icons ───────────────────────────────────────────────────────────────────
 
@@ -68,7 +69,7 @@ function CartIcon({ light = false }: { light?: boolean }) {
   );
 }
 
-function HomeGradientBackground({ variant = 'classic' }: { variant?: 'classic' | 'home' }) {
+export function HomeHeroBackground({ variant = 'classic' }: { variant?: 'classic' | 'home' }) {
   if (variant === 'home') {
     return (
       <View pointerEvents="none" style={styles.heroBackground}>
@@ -76,6 +77,7 @@ function HomeGradientBackground({ variant = 'classic' }: { variant?: 'classic' |
           <Defs>
             <LinearGradient id="homeHeroGrad" x1="0" x2="0" y1="0" y2="1">
               <Stop offset="0" stopColor={HOME_GRADIENT_TOP} />
+              <Stop offset="0.55" stopColor="#7568E8" />
               <Stop offset="1" stopColor={HOME_GRADIENT_BOTTOM} />
             </LinearGradient>
           </Defs>
@@ -96,22 +98,7 @@ function HomeGradientBackground({ variant = 'classic' }: { variant?: 'classic' |
 
 function HeroCurve({ fill = '#5E02AF', variant = 'classic' }: { fill?: string; variant?: 'classic' | 'home' }) {
   if (variant === 'home') {
-    return (
-      <View pointerEvents="none" style={styles.heroCurveHome}>
-        <Svg height={56} width="100%" viewBox="0 0 375 56" preserveAspectRatio="none">
-          <Defs>
-            <LinearGradient id="homeCurveGrad" x1="0" x2="0" y1="0" y2="1">
-              <Stop offset="0" stopColor={HOME_GRADIENT_BOTTOM} />
-              <Stop offset="1" stopColor={HOME_GRADIENT_BOTTOM} />
-            </LinearGradient>
-          </Defs>
-          <Path
-            d="M0 0 H375 V16 C310 56 65 56 0 16 V0 Z"
-            fill="url(#homeCurveGrad)"
-          />
-        </Svg>
-      </View>
-    );
+    return null;
   }
 
   return (
@@ -181,6 +168,8 @@ export type HomeHeroHeaderProps = {
   /** Home scroll: sticky = header+search; cta = Ask MPS block; all = full hero */
   homePart?: 'sticky' | 'cta' | 'all';
   heroBackgroundColor?: string;
+  /** When true, no local gradient/background — parent provides unified hero background */
+  transparentBackground?: boolean;
 };
 
 export default function HomeHeroHeader({
@@ -200,13 +189,14 @@ export default function HomeHeroHeader({
   showHeroCopy = true,
   showHeroCurve = true,
   userName,
-  greeting = 'Hello!',
+  greeting = 'Hi!',
   goalSubtitle = "What's your goal for today?",
   showSearchBar = false,
   onSearchPress,
   heroLayout = 'classic',
   homePart = 'all',
   heroBackgroundColor,
+  transparentBackground = false,
 }: HomeHeroHeaderProps) {
   const isCompact = !showHeroCopy;
   const isHomeLayout = heroLayout === 'home' && showHeroCopy;
@@ -248,8 +238,13 @@ export default function HomeHeroHeader({
 
   if (isStickyPart) {
     return (
-      <View style={[styles.stickyHero, heroBackgroundColor != null && { backgroundColor: heroBackgroundColor }]}>
-        <HomeGradientBackground variant="home" />
+      <View
+        style={[
+          styles.stickyHero,
+          transparentBackground && styles.transparentHero,
+          heroBackgroundColor != null && { backgroundColor: heroBackgroundColor },
+        ]}>
+        {!transparentBackground ? <HomeHeroBackground variant="home" /> : null}
         <View style={styles.stickyContent}>
           <View style={styles.heroTopRowHome}>
             <View style={styles.greetingBlockHome}>
@@ -286,8 +281,8 @@ export default function HomeHeroHeader({
 
   if (isCtaPart) {
     return (
-      <View style={styles.ctaHero}>
-        <HomeGradientBackground variant="home" />
+      <View style={[styles.ctaHero, transparentBackground && styles.transparentHero]}>
+        {!transparentBackground ? <HomeHeroBackground variant="home" /> : null}
         <View style={styles.ctaContent}>
           <View style={styles.heroCopy}>
             <View style={styles.titleRow}>
@@ -296,13 +291,17 @@ export default function HomeHeroHeader({
             </View>
             <Text style={[styles.heroSubtitle, inter18('medium')]}>{subtitle}</Text>
             {onCtaPress ? (
-              <Pressable onPress={onCtaPress} style={[styles.heroButton, styles.heroButtonCta]}>
+              <Pressable
+                onPress={onCtaPress}
+                style={[styles.heroButton, styles.heroButtonGlass, styles.heroButtonCta]}>
                 <Text style={[styles.heroButtonText, inter18('bold')]}>{ctaLabel}</Text>
               </Pressable>
             ) : null}
           </View>
         </View>
-        {showHeroCurve ? <HeroCurve variant="home" fill={HOME_GRADIENT_BOTTOM} /> : null}
+        {showHeroCurve && !transparentBackground ? (
+          <HeroCurve variant="home" fill={HOME_GRADIENT_BOTTOM} />
+        ) : null}
       </View>
     );
   }
@@ -315,7 +314,9 @@ export default function HomeHeroHeader({
         isHomeLayout && styles.heroHome,
         heroBackgroundColor != null && { backgroundColor: heroBackgroundColor },
       ]}>
-      {!isCompact ? <HomeGradientBackground variant={isHomeLayout ? 'home' : 'classic'} /> : null}
+      {!isCompact && !transparentBackground ? (
+        <HomeHeroBackground variant={isHomeLayout ? 'home' : 'classic'} />
+      ) : null}
 
       <View style={[styles.heroTopRow, isCompact && styles.heroTopRowCompact, isHomeLayout && styles.heroTopRowHome]}>
         {isHomeLayout ? (
@@ -397,6 +398,11 @@ export default function HomeHeroHeader({
 }
 
 const styles = StyleSheet.create({
+  transparentHero: {
+    backgroundColor: 'transparent',
+    overflow: 'visible',
+  },
+
   stickyHero: {
     backgroundColor: HOME_GRADIENT_BOTTOM,
     overflow: 'hidden',
@@ -412,7 +418,7 @@ const styles = StyleSheet.create({
     position: 'relative',
     backgroundColor: HOME_GRADIENT_BOTTOM,
     overflow: 'visible',
-    paddingBottom: 56,
+    paddingBottom: 8,
   },
 
   ctaContent: {
@@ -676,15 +682,28 @@ const styles = StyleSheet.create({
   heroButton: {
     alignSelf: 'center',
     backgroundColor: '#111111',
-    borderRadius: 8,
-    paddingHorizontal: 30,
-    paddingVertical: 12,
-    minWidth: 115,
+    borderRadius: 28,
+    paddingHorizontal: 34,
+    paddingVertical: 13,
+    minWidth: 150,
     alignItems: 'center',
   },
 
+  heroButtonGlass: {
+    backgroundColor: 'rgba(255, 255, 255, 0.2)',
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.35)',
+    minWidth: 168,
+    paddingHorizontal: 38,
+    shadowColor: '#4C3D9E',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.18,
+    shadowRadius: 10,
+    elevation: 2,
+  },
+
   heroButtonCta: {
-    marginBottom: 16,
+    marginBottom: 8,
   },
 
   heroButtonText: {
@@ -699,11 +718,4 @@ const styles = StyleSheet.create({
     bottom: -2,
   },
 
-  heroCurveHome: {
-    position: 'absolute',
-    left: 0,
-    right: 0,
-    bottom: -30,
-    height: 56,
-  },
 });

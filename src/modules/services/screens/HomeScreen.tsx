@@ -18,6 +18,16 @@ import Svg, {
   SvgProps,
 } from 'react-native-svg';
 
+import AdharCardIcon from '../../../assets/images/adhar card.svg';
+import CarIcon from '../../../assets/images/Car.svg';
+import DomicileIcon from '../../../assets/images/domicile.svg';
+import MarriageIcon from '../../../assets/images/marriage.svg';
+import RentAgreementIcon from '../../../assets/images/rent aggrement.svg';
+import TwoWheelIcon from '../../../assets/images/2 wheel.svg';
+import TwoFourWheelIcon from '../../../assets/images/two&four wheel.svg';
+import PanCardIcon from '../../../assets/images/pan card.svg';
+import PassportIcon from '../../../assets/images/passport.svg';
+import CertificateIcon from '../../../assets/images/icons/id-card_gd.svg';
 import InsuranceCardIcon from '../../../assets/images/icons/insurance.svg';
 import TaxCardIcon from '../../../assets/images/icons/tax_s.svg';
 import MutualFundCardIcon from '../../../assets/images/icons/mutual_fund.svg';
@@ -26,7 +36,11 @@ import { IMAGE_BASE_URL } from '../../../config/env';
 import { ExploreScreen, type ExploreServiceItem } from '../../explore';
 import HealthInsuranceStack from '../../healthInsurance/navigation/HealthInsuranceStack';
 import AutoMarqueeScroll from '../components/AutoMarqueeScroll';
-import HomeHeroHeader from '../components/HomeHeroHeader';
+import HomeHeroHeader, {
+  HOME_GRADIENT_TOP,
+  HOME_HERO_CURVE_RADIUS,
+  HomeHeroBackground,
+} from '../components/HomeHeroHeader';
 import ServicesBottomTabBar, {
   type ServicesMainTab,
 } from '../components/ServicesBottomTabBar';
@@ -35,6 +49,7 @@ import { useGovernmentServices } from '../hooks/useServices';
 import { useMyOrders } from '../hooks/useMyOrders';
 import { useUserProfile } from '../hooks/useUserProfile';
 import MyRequestsScreen from './MyRequestsScreen';
+import { isActiveOrder } from '../utils/orderStatus';
 
 type HomeScreenProps = {
   onGetStarted?: () => void;
@@ -48,8 +63,70 @@ type HomeScreenProps = {
   onOpenService?: (serviceId: number) => void;
   onGovernmentDocuments?: () => void;
   onInsurancePress?: () => void;
+  onTaxServicesPress?: () => void;
+  onOpenDocVault?: () => void;
   initialRequestsParentOrderId?: string;
 };
+
+function LockIcon({ size = 22, color = '#38BDF8' }: { size?: number; color?: string }) {
+  return (
+    <Svg height={size} viewBox="0 0 24 24" width={size}>
+      <Path
+        d="M7 11V8a5 5 0 0 1 10 0v3"
+        fill="none"
+        stroke={color}
+        strokeLinecap="round"
+        strokeWidth="1.8"
+      />
+      <Rect
+        fill="none"
+        height="10"
+        rx="2"
+        stroke={color}
+        strokeWidth="1.8"
+        width="14"
+        x="5"
+        y="11"
+      />
+      <Path d="M12 14v3" stroke={color} strokeLinecap="round" strokeWidth="1.8" />
+    </Svg>
+  );
+}
+
+function DocVaultHomeSection({ onPress }: { onPress?: () => void }) {
+  return (
+    <View style={styles.docVaultSection}>
+      <View style={styles.docVaultHeader}>
+        <View style={styles.docVaultHeaderText}>
+          <Text style={[styles.docVaultTitle, inter18('bold')]}>DocVault</Text>
+          <Text style={[styles.docVaultSubtitle, inter18('regular')]}>
+            Your encrypted personal storage
+          </Text>
+        </View>
+        <Pressable
+          onPress={onPress}
+          disabled={!onPress}
+          style={({ pressed }) => [styles.accessVaultBtn, pressed && { opacity: 0.9 }]}>
+          <Text style={[styles.accessVaultText, inter18('semiBold')]}>Access Vault</Text>
+        </Pressable>
+      </View>
+
+      <Pressable
+        onPress={onPress}
+        disabled={!onPress}
+        style={({ pressed }) => [styles.docVaultCard, pressed && { opacity: 0.94 }]}>
+        <View style={styles.docVaultIconWrap}>
+          <LockIcon size={24} color="#38BDF8" />
+        </View>
+        <View style={styles.docVaultCardText}>
+          <Text style={[styles.docVaultCardTitle, inter18('bold')]}>Secure Storage</Text>
+          <Text style={[styles.docVaultCardSub, inter18('regular')]}>48 Documents Protected</Text>
+        </View>
+        <Icon kind="chevron" color="#9CA3AF" size={22} />
+      </Pressable>
+    </View>
+  );
+}
 
 function CalculatorTileIcon({ width = 42, height = 42, color }: SvgProps) {
   const size = Math.min(Number(width) || 42, Number(height) || 42);
@@ -77,6 +154,10 @@ function CalculatorTileIcon({ width = 42, height = 42, color }: SvgProps) {
 }
 
 type SvgIconType = React.FC<SvgProps>;
+
+type GovernmentServiceIcon = {
+  IconComponent: SvgIconType;
+};
 
 function Icon({
   kind,
@@ -143,6 +224,7 @@ function SectionCard({
   children,
   compact = false,
   flat = false,
+  activeFocus = false,
   rightChevron = false,
   blueHeader = false,
   onHeaderPress,
@@ -151,20 +233,28 @@ function SectionCard({
   children: React.ReactNode;
   compact?: boolean;
   flat?: boolean;
+  activeFocus?: boolean;
   rightChevron?: boolean;
   blueHeader?: boolean;
   onHeaderPress?: () => void;
 }) {
   return (
-    <View style={[styles.card, compact ? styles.compactCard : undefined, flat ? styles.flatCard : undefined]}>
+    <View
+      style={[
+        styles.card,
+        compact ? styles.compactCard : undefined,
+        flat ? styles.flatCard : undefined,
+        activeFocus ? styles.activeFocusSectionCard : undefined,
+      ]}>
       {title ? (
         <Pressable
           onPress={onHeaderPress}
           disabled={!onHeaderPress}
           style={[
             styles.cardHeader,
-            blueHeader ? styles.blueCardHeader : undefined,
             flat ? styles.flatCardHeader : undefined,
+            blueHeader ? styles.blueCardHeader : undefined,
+            flat && !blueHeader ? styles.flatCardHeaderTransparent : undefined,
           ]}>
           <Text style={[styles.cardTitle, inter18('bold')]}>{title}</Text>
           {rightChevron ? <Icon kind="chevron" color="#111111" size={22} /> : null}
@@ -205,31 +295,107 @@ function formatMoney(amount: number): string {
   }
 }
 
-function isActiveOrder(statusRaw: string): boolean {
-  const s = String(statusRaw || '').toLowerCase();
-  // Treat these as "done" or "not actionable" in "Active Requests".
-  if (s.includes('paid') || s === 'completed' || s === 'success') {
-    return false;
+function resolveGovernmentServiceIcon(name: string): GovernmentServiceIcon | null {
+  const normalized = name.toLowerCase();
+
+  if (normalized.includes('pan')) {
+    return { IconComponent: PanCardIcon };
   }
-  if (s.includes('cancel') || s.includes('fail') || s.includes('reject')) {
-    return false;
+  if (
+    normalized.includes('aadhaar') ||
+    normalized.includes('aadhar') ||
+    normalized.includes('adhar')
+  ) {
+    return { IconComponent: AdharCardIcon };
   }
-  return true;
+  if (normalized.includes('passport')) {
+    return { IconComponent: PassportIcon };
+  }
+
+  const hasTwoWheel =
+    normalized.includes('2 wheel') ||
+    normalized.includes('two wheel') ||
+    normalized.includes('two-wheel') ||
+    normalized.includes('twowheel') ||
+    normalized.includes('two wheeler') ||
+    normalized.includes('2-wheeler') ||
+    normalized.includes('bike') ||
+    normalized.includes('motorbike') ||
+    normalized.includes('scooter') ||
+    normalized.includes('motorcycle');
+
+  const hasFourWheel =
+    normalized.includes('4 wheel') ||
+    normalized.includes('four wheel') ||
+    normalized.includes('four-wheel') ||
+    normalized.includes('fourwheel') ||
+    normalized.includes('four wheeler') ||
+    normalized.includes('4-wheeler') ||
+    normalized.includes('automobile') ||
+    (normalized.includes('car') && !normalized.includes('card'));
+
+  const hasCombinedTwoFour =
+    normalized.includes('two&four') ||
+    normalized.includes('two & four') ||
+    normalized.includes('2&4') ||
+    normalized.includes('2 & 4') ||
+    normalized.includes('2 and 4') ||
+    normalized.includes('two and four') ||
+    (hasTwoWheel && hasFourWheel);
+
+  if (hasCombinedTwoFour) {
+    return { IconComponent: TwoFourWheelIcon };
+  }
+  if (hasTwoWheel) {
+    return { IconComponent: TwoWheelIcon };
+  }
+  if (
+    hasFourWheel ||
+    normalized.includes('driving license') ||
+    normalized.includes('driving licence')
+  ) {
+    return { IconComponent: CarIcon };
+  }
+  if (normalized.includes('rent')) {
+    return { IconComponent: RentAgreementIcon };
+  }
+  if (normalized.includes('marriage')) {
+    return { IconComponent: MarriageIcon };
+  }
+  if (normalized.includes('domicile')) {
+    return { IconComponent: DomicileIcon };
+  }
+  if (
+    normalized.includes('certificate') ||
+    normalized.includes('birth') ||
+    normalized.includes('income') ||
+    normalized.includes('caste') ||
+    normalized.includes('encumbrance') ||
+    normalized.includes('affidavit')
+  ) {
+    return { IconComponent: CertificateIcon };
+  }
+
+  return null;
 }
 
 function QuickService({
   imageUri,
+  IconComponent,
   label,
   onPress,
 }: {
   imageUri: string | null;
+  IconComponent?: SvgIconType | null;
   label: string;
   onPress?: () => void;
 }) {
   return (
     <Pressable onPress={onPress} style={styles.quickItem}>
       <View style={styles.quickIconCard}>
-        {imageUri ? (
+        {IconComponent ? (
+          <IconComponent width={42} height={42} />
+        ) : imageUri ? (
           <Image
             source={{ uri: imageUri }}
             style={styles.quickServiceImage}
@@ -244,7 +410,7 @@ function QuickService({
   );
 }
 
-function FinancialServiceCard({
+function FinancialServiceItem({
   IconComponent,
   label,
   onPress,
@@ -254,14 +420,12 @@ function FinancialServiceCard({
   onPress?: () => void;
 }) {
   return (
-    <Pressable
+    <QuickService
+      IconComponent={IconComponent}
+      imageUri={null}
+      label={label}
       onPress={onPress}
-      style={({ pressed }) => [styles.financialCard, pressed && { opacity: 0.88 }]}>
-      <View style={styles.financialIconWrap}>
-        <IconComponent width={46} height={46} />
-      </View>
-      <Text numberOfLines={2} style={[styles.financialLabel, inter18('medium')]}>{label}</Text>
-    </Pressable>
+    />
   );
 }
 
@@ -278,6 +442,8 @@ function HomeScreen({
   onOpenService,
   onGovernmentDocuments,
   onInsurancePress,
+  onTaxServicesPress,
+  onOpenDocVault,
   onOpenNotifications,
   onOpenCart,
   onOpenRewards,
@@ -299,7 +465,7 @@ function HomeScreen({
   const showExploreHealthInsurance = showExplore && exploreOverlay === 'healthInsurance';
 
   const activeParentOrders = React.useMemo(
-    () => orders.filter(o => isActiveOrder(o.status)),
+    () => orders.filter(isActiveOrder),
     [orders],
   );
 
@@ -370,13 +536,22 @@ function HomeScreen({
       onInsurancePress?.();
       return;
     }
+    if (id === 'tax') {
+      onTaxServicesPress?.();
+      return;
+    }
     if (id === 'planwealth') {
       onOpenCalculators?.();
     }
   };
 
   return (
-    <SafeAreaView style={styles.safeArea} edges={['top', 'left', 'right']}>
+    <SafeAreaView
+      style={[
+        styles.safeArea,
+        !showExplore && !showRequests && !showExploreHealthInsurance && styles.safeAreaHome,
+      ]}
+      edges={['top', 'left', 'right']}>
       <View style={styles.screen}>
         {showExploreHealthInsurance ? (
           <HealthInsuranceStack onBack={() => setExploreOverlay(null)} />
@@ -405,33 +580,42 @@ function HomeScreen({
           <>
             <ScrollView
               bounces
-              stickyHeaderIndices={[0]}
               style={styles.homeScroll}
               contentContainerStyle={styles.homeScrollContent}
               showsVerticalScrollIndicator={false}>
-              <View style={styles.stickyHeroShell}>
-                <HomeHeroHeader
-                  profileInitials={initials}
-                  userName={displayName}
-                  heroLayout="home"
-                  homePart="sticky"
-                  showSearchBar
-                  onProfilePress={onOpenProfile}
-                  onNotificationPress={onOpenNotifications}
-                  onCartPress={onOpenCart}
-                  notificationCount={1}
-                  cartItemCount={cartItems.length > 0 ? cartItems.length : undefined}
-                />
-              </View>
+              <View style={styles.homeHeroBlock}>
+                <View style={styles.homeHeroBackgroundClip}>
+                  <HomeHeroBackground variant="home" />
+                </View>
 
-              <HomeHeroHeader
-                homePart="cta"
-                heroLayout="home"
-                onCtaPress={onGetStarted}
-              />
+                <View style={styles.homeHeroContent}>
+                  <HomeHeroHeader
+                    profileInitials={initials}
+                    userName={displayName}
+                    heroLayout="home"
+                    homePart="sticky"
+                    showSearchBar
+                    transparentBackground
+                    onProfilePress={onOpenProfile}
+                    onNotificationPress={onOpenNotifications}
+                    onCartPress={onOpenCart}
+                    notificationCount={1}
+                    cartItemCount={cartItems.length > 0 ? cartItems.length : undefined}
+                  />
+
+                  <HomeHeroHeader
+                    homePart="cta"
+                    heroLayout="home"
+                    transparentBackground
+                    showHeroCurve={false}
+                    onCtaPress={onGetStarted}
+                  />
+                </View>
+              </View>
 
               <View style={styles.activeFocusOverlap}>
                 <SectionCard
+                  activeFocus
                   title={activeFocusTitle}
                   blueHeader
                   rightChevron
@@ -540,21 +724,10 @@ function HomeScreen({
               </View>
 
               <View style={styles.scrollSections}>
-                <SectionCard compact>
-                  <Pressable
-                    accessibilityLabel="Open rewards"
-                    onPress={onOpenRewards}
-                    style={styles.rewardRow}>
-                    <Text style={styles.rewardStar}>⭐</Text>
-                    <View style={styles.rewardTextWrap}>
-                      <Text style={[styles.rewardTitle, inter18('bold')]}>REWARDS</Text>
-                      <Text style={[styles.rewardPoints, inter18('bold')]}>1250 Points Available</Text>
-                    </View>
-                    <Icon kind="chevron" color="#111111" size={24} />
-                  </Pressable>
-                </SectionCard>
+                <DocVaultHomeSection onPress={onOpenDocVault} />
 
                 <SectionCard
+                  flat
                   title="Government Documents"
                   rightChevron
                   onHeaderPress={onGovernmentDocuments}>
@@ -563,33 +736,38 @@ function HomeScreen({
                       <ActivityIndicator size="small" color="#9E8DFF" />
                     </View>
                   ) : govServices.length === 0 ? (
-                    <View style={[styles.emptyState, styles.flatSectionBody]}>
+                    <View style={[styles.emptyState, styles.emptyStateFlat]}>
                       <Text style={[styles.emptyText, inter18('regular')]}>No services available</Text>
                     </View>
                   ) : (
                     <AutoMarqueeScroll
                       speed={0.35}
                       gap={14}
-                      contentContainerStyle={styles.marqueeContent}>
-                      {govServices.map(service => (
-                        <QuickService
-                          key={service.id}
-                          imageUri={resolveServiceImage(service.service_image)}
-                          label={service.name}
-                          onPress={() => onServicePress?.(service.id)}
-                        />
-                      ))}
+                      contentContainerStyle={styles.marqueeContentFlat}>
+                      {govServices.map(service => {
+                        const govIcon = resolveGovernmentServiceIcon(service.name);
+
+                        return (
+                          <QuickService
+                            key={service.id}
+                            IconComponent={govIcon?.IconComponent}
+                            imageUri={resolveServiceImage(service.service_image)}
+                            label={service.name}
+                            onPress={() => onServicePress?.(service.id)}
+                          />
+                        );
+                      })}
                     </AutoMarqueeScroll>
                   )}
                 </SectionCard>
 
-                <SectionCard title="Financial Services" rightChevron>
+                <SectionCard flat title="Financial Services" rightChevron>
                   <AutoMarqueeScroll
                     speed={0.32}
-                    gap={12}
-                    contentContainerStyle={styles.marqueeContentFinancial}>
+                    gap={14}
+                    contentContainerStyle={styles.marqueeContentFlat}>
                     {FINANCIAL_SERVICES.map(item => (
-                      <FinancialServiceCard
+                      <FinancialServiceItem
                         key={item.id}
                         IconComponent={item.Icon}
                         label={item.label}
@@ -617,6 +795,10 @@ const styles = StyleSheet.create({
     backgroundColor: '#FFFFFF',
   },
 
+  safeAreaHome: {
+    backgroundColor: HOME_GRADIENT_TOP,
+  },
+
   screen: {
     flex: 1,
     backgroundColor: '#FFFFFF',
@@ -632,24 +814,113 @@ const styles = StyleSheet.create({
     backgroundColor: '#F7F7F7',
   },
 
-  stickyHeroShell: {
-    backgroundColor: '#6A5AE0',
-    zIndex: 20,
-    elevation: 12,
+  homeHeroBlock: {
+    position: 'relative',
+    marginBottom: -18,
+    zIndex: 2,
+  },
+
+  homeHeroBackgroundClip: {
+    ...StyleSheet.absoluteFill,
+    borderBottomLeftRadius: HOME_HERO_CURVE_RADIUS,
+    borderBottomRightRadius: HOME_HERO_CURVE_RADIUS,
+    overflow: 'hidden',
+  },
+
+  homeHeroContent: {
+    position: 'relative',
+    zIndex: 1,
+    paddingBottom: 22,
   },
 
   activeFocusOverlap: {
-    marginTop: -22,
+    marginTop: -8,
     marginHorizontal: 16,
     marginBottom: 8,
     zIndex: 5,
-    elevation: 8,
   },
 
   scrollSections: {
     paddingHorizontal: 16,
     gap: 14,
     paddingTop: 4,
+  },
+
+  docVaultSection: {
+    gap: 12,
+  },
+
+  docVaultHeader: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    justifyContent: 'space-between',
+    gap: 12,
+  },
+
+  docVaultHeaderText: {
+    flex: 1,
+    gap: 4,
+  },
+
+  docVaultTitle: {
+    fontSize: 22,
+    color: '#111827',
+    lineHeight: 28,
+  },
+
+  docVaultSubtitle: {
+    fontSize: 13,
+    color: '#6B7280',
+    lineHeight: 18,
+  },
+
+  accessVaultBtn: {
+    backgroundColor: '#E8F0FE',
+    borderRadius: 999,
+    paddingHorizontal: 14,
+    paddingVertical: 8,
+    marginTop: 2,
+  },
+
+  accessVaultText: {
+    fontSize: 12,
+    color: '#1D4ED8',
+  },
+
+  docVaultCard: {
+    backgroundColor: '#FFFFFF',
+    borderRadius: 18,
+    borderWidth: 1,
+    borderColor: '#E8EDF3',
+    paddingHorizontal: 14,
+    paddingVertical: 16,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+  },
+
+  docVaultIconWrap: {
+    width: 52,
+    height: 52,
+    borderRadius: 26,
+    backgroundColor: '#0F172A',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+
+  docVaultCardText: {
+    flex: 1,
+    gap: 4,
+  },
+
+  docVaultCardTitle: {
+    fontSize: 16,
+    color: '#111827',
+  },
+
+  docVaultCardSub: {
+    fontSize: 13,
+    color: '#6B7280',
   },
 
   card: {
@@ -681,8 +952,18 @@ const styles = StyleSheet.create({
     shadowOpacity: 0,
     shadowRadius: 0,
     shadowOffset: { width: 0, height: 0 },
-    marginHorizontal: -16,
+    marginHorizontal: 0,
     minHeight: 0,
+  },
+
+  activeFocusSectionCard: {
+    borderRadius: 22,
+    borderWidth: 0,
+    elevation: 0,
+    shadowOpacity: 0,
+    shadowRadius: 0,
+    shadowOffset: { width: 0, height: 0 },
+    overflow: 'hidden',
   },
 
   cardHeader: {
@@ -694,8 +975,13 @@ const styles = StyleSheet.create({
     paddingVertical: 8,
   },
   flatCardHeader: {
+    paddingHorizontal: 0,
+    paddingVertical: 6,
+    minHeight: 0,
+  },
+
+  flatCardHeaderTransparent: {
     backgroundColor: 'transparent',
-    paddingHorizontal: 16,
   },
 
   blueCardHeader: {
@@ -720,49 +1006,26 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
 
+  emptyStateFlat: {
+    backgroundColor: 'transparent',
+  },
+
   emptyText: {
     fontSize: 12,
     color: '#444444',
     fontStyle: 'italic',
   },
 
-  rewardRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-
-  rewardStar: {
-    fontSize: 28,
-    marginRight: 10,
-    color: '#F59E0B',
-  },
-
-  rewardTextWrap: {
-    flex: 1,
-  },
-
-  rewardTitle: {
-    fontSize: 11,
-    color: '#FF8A00',
-    marginBottom: 3,
-    letterSpacing: 0.3,
-  },
-
-  rewardPoints: {
-    fontSize: 14,
-    color: '#111827',
-  },
-
   marqueeContent: {
     paddingHorizontal: 14,
-    paddingTop:12,
-    paddingBottom:14,
+    paddingTop: 12,
+    paddingBottom: 14,
   },
 
-  marqueeContentFinancial: {
-    paddingHorizontal: 14,
-    paddingTop: 10,
-    paddingBottom: 14,
+  marqueeContentFlat: {
+    paddingHorizontal: 0,
+    paddingTop: 8,
+    paddingBottom: 4,
   },
 
   quickItem: {
@@ -774,8 +1037,8 @@ const styles = StyleSheet.create({
   quickIconCard: {
     width: 72,
     height: 72,
-    borderRadius: 18,
-    backgroundColor: '#F8FAFC',
+    borderRadius: 16,
+    backgroundColor: '#FFFFFF',
     borderWidth: 1,
     borderColor: '#E8EDF3',
     alignItems: 'center',
@@ -808,37 +1071,6 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
 
-  financialCard: {
-    width: 96,
-    height: 128,
-    backgroundColor: '#FFFFFF',
-    borderRadius: 16,
-    borderWidth: 1,
-    borderColor: '#E8EDF3',
-    alignItems: 'center',
-    paddingTop: 14,
-    paddingHorizontal: 4,
-    paddingVertical: 4,
-    justifyContent: "flex-start",
-  },
-
-  financialLabel: {
-    fontSize: 12,
-    color: '#374151',
-    textAlign: 'center',
-    marginBottom: 8,
-  },
-
-  financialIconWrap: {
-    flex: 1,
-    width: 64,
-    height: 64,
-    borderRadius: 14,
-    backgroundColor: "#E8EDF3",
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-
   activeRequestsWrap: {
     paddingHorizontal: 14,
     paddingVertical: 14,
@@ -849,7 +1081,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#FFFFFF',
     borderWidth: 1,
     borderColor: '#E8EDF3',
-    borderRadius: 16,
+    borderRadius: 18,
     paddingHorizontal: 14,
     paddingVertical: 14,
     flexDirection: 'row',
