@@ -24,6 +24,9 @@ const {
 
 const app = express();
 
+// Behind nginx / reverse proxy on production (https://mpsconnect.thempstech.com)
+app.set('trust proxy', 1);
+
 app.use(
   cors({
     origin: true,
@@ -96,6 +99,9 @@ const {
 } = require("./modules/document-vault/document.service");
 app.use("/api/v1/documents", documentRoutes);
 
+const addressRoutes = require("./modules/addresses/address.routes");
+app.use("/api/v1/addresses", addressRoutes);
+
 ensureDefaultDocumentCategory().catch((error) => {
   console.error("Failed to seed default document category:", error);
 });
@@ -112,5 +118,6 @@ app.listen(PORT, HOST, () => {
   console.log(`FCM token:     POST http://localhost:${PORT}/api/v1/notifications/fcm-token`);
   console.log(`Documents:     GET  http://localhost:${PORT}/api/v1/documents`);
   console.log(`Doc upload:    POST http://localhost:${PORT}/api/v1/documents/upload`);
+  console.log(`Addresses:     GET  http://localhost:${PORT}/api/v1/addresses`);
   startOrderStatusPolling();
 });

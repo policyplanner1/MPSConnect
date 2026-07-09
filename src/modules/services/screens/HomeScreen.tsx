@@ -34,6 +34,8 @@ import MutualFundCardIcon from '../../../assets/images/icons/mutual_fund.svg';
 import { inter18 } from '../../../core/theme/typography';
 import { IMAGE_BASE_URL } from '../../../config/env';
 import { ExploreScreen, type ExploreServiceItem } from '../../explore';
+import { resolveExploreServiceLink, isExploreTaxService } from '../../explore/utils/resolveExploreServiceLink';
+import { TAX_FILING_CATEGORY_ID } from '../IncomeTax/constants';
 import HealthInsuranceStack from '../../healthInsurance/navigation/HealthInsuranceStack';
 import AutoMarqueeScroll from '../components/AutoMarqueeScroll';
 import HomeHeroHeader, {
@@ -454,6 +456,7 @@ function HomeScreen({
   const [mainTab, setMainTab] = React.useState<ServicesMainTab>('home');
   const [exploreOverlay, setExploreOverlay] = React.useState<'healthInsurance' | null>(null);
   const { services: govServices, loading: govLoading } = useGovernmentServices();
+  const { services: taxServices } = useGovernmentServices(TAX_FILING_CATEGORY_ID);
   const { items: cartItems } = useServiceCart();
   const { orders, loading: myOrdersLoading } = useMyOrders();
   const { profile, initials } = useUserProfile();
@@ -521,9 +524,24 @@ function HomeScreen({
     }
   }, [initialRequestsParentOrderId]);
 
-  const handleExploreServicePress = (_service: ExploreServiceItem) => {
-    // Reserved for future explore → service detail / CRM routes.
-  };
+  const handleExploreServicePress = React.useCallback(
+    (service: ExploreServiceItem) => {
+      const link = resolveExploreServiceLink(service, { taxServices, govServices });
+
+      if (link?.serviceId) {
+        onOpenService?.(link.serviceId);
+        return;
+      }
+
+      if (isExploreTaxService(service)) {
+        onTaxServicesPress?.();
+        return;
+      }
+
+      onGovernmentDocuments?.();
+    },
+    [govServices, onGovernmentDocuments, onOpenService, onTaxServicesPress, taxServices],
+  );
 
   const displayName = profile?.name?.trim().split(/\s+/)[0] ?? 'there';
   const activeFocusTitle =

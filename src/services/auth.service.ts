@@ -140,7 +140,9 @@ export function getAuthErrorMessage(error: unknown): string {
           '• Backend running? cd backend-api && npm run dev',
           '• Phone on same Wi‑Fi as PC',
           '• Windows: allow inbound TCP 5000 (Firewall)',
-          '• Physical device: set AUTH_API_BASE_URL in .env to http://<YOUR-PC-IP>:5000/api/v1 (not localhost)',
+          '• Physical device: set AUTH_API_BASE_URL in .env',
+          '  Production: https://mpsconnect.thempstech.com/api/v1',
+          '  Local dev: http://<YOUR-PC-IP>:5000/api/v1 (not localhost)',
           '• Android emulator: AUTH_API_BASE_URL=http://10.0.2.2:5000/api/v1',
           '• Rebuild app after native changes (npx react-native run-android)',
         ].join('\n');

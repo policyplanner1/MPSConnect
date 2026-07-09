@@ -37,7 +37,16 @@ describe('auth.validation (AUTH-A-004, AUTH-A-005, AUTH-A-006)', () => {
       email: 'user@test.com',
       password: 'secret12',
     });
+    expect(parsed.email).toBe('user@test.com');
     expect(parsed.password).toBe('secret12');
+  });
+
+  it('normalizes login email to lowercase', () => {
+    const parsed = loginSchema.parse({
+      email: '  User@Mail.COM ',
+      password: 'secret12',
+    });
+    expect(parsed.email).toBe('user@mail.com');
   });
 
   it('rejects short password on login', () => {

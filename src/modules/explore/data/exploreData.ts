@@ -66,7 +66,7 @@ export const TAX_SEASON_ESSENTIALS: ExploreCategory = {
       description: 'Get your ITR filed by experts quickly and accurately.',
       iconKey: 'itrFiling',
       priceLabel: '₹499',
-      ctaLabel: 'Apply now',
+      ctaLabel: 'Buy now',
     },
     {
       id: 'tax-season-property-tax',
@@ -74,7 +74,7 @@ export const TAX_SEASON_ESSENTIALS: ExploreCategory = {
       description: 'Update property tax records with the correct owner name.',
       iconKey: 'propertyTaxNameCertificate',
       priceLabel: '₹699',
-      ctaLabel: 'Apply now',
+      ctaLabel: 'Buy now',
     },
     {
       id: 'tax-season-itr-reply',
@@ -82,7 +82,7 @@ export const TAX_SEASON_ESSENTIALS: ExploreCategory = {
       description: 'Expert help to respond to income tax notices on time.',
       iconKey: 'incomeTaxReply',
       priceLabel: '₹999',
-      ctaLabel: 'Apply now',
+      ctaLabel: 'Buy now',
     },
   ],
 };
@@ -98,7 +98,7 @@ export const IDENTITY_DOCUMENTS: ExploreCategory = {
       description: 'New, update, or duplicate Aadhaar assistance.',
       iconKey: 'aadhar',
       priceLabel: '₹299',
-      ctaLabel: 'Apply now',
+      ctaLabel: 'Buy now',
     },
     {
       id: 'identity-pan',
@@ -106,7 +106,7 @@ export const IDENTITY_DOCUMENTS: ExploreCategory = {
       description: 'Apply for a new PAN or correct existing details.',
       iconKey: 'pan',
       priceLabel: '₹499',
-      ctaLabel: 'Apply now',
+      ctaLabel: 'Buy now',
     },
     {
       id: 'identity-voter',
@@ -114,7 +114,7 @@ export const IDENTITY_DOCUMENTS: ExploreCategory = {
       description: 'New voter ID application and correction support.',
       iconKey: 'voterId',
       priceLabel: '₹399',
-      ctaLabel: 'Apply now',
+      ctaLabel: 'Buy now',
     },
     {
       id: 'identity-passport',
@@ -122,7 +122,7 @@ export const IDENTITY_DOCUMENTS: ExploreCategory = {
       description: 'Passport application and renewal made simple.',
       iconKey: 'passport',
       priceLabel: '₹999',
-      ctaLabel: 'Apply now',
+      ctaLabel: 'Buy now',
     },
     {
       id: 'identity-ration',
@@ -130,7 +130,7 @@ export const IDENTITY_DOCUMENTS: ExploreCategory = {
       description: 'Apply for a new ration card or update details.',
       iconKey: 'rationCard',
       priceLabel: '₹349',
-      ctaLabel: 'Apply now',
+      ctaLabel: 'Buy now',
     },
     {
       id: 'identity-two-wheel',
@@ -138,7 +138,7 @@ export const IDENTITY_DOCUMENTS: ExploreCategory = {
       description: 'Learner and permanent two-wheeler licence help.',
       iconKey: 'twoWheelLicense',
       priceLabel: '₹599',
-      ctaLabel: 'Apply now',
+      ctaLabel: 'Buy now',
     },
     {
       id: 'identity-two-four-wheel',
@@ -146,7 +146,7 @@ export const IDENTITY_DOCUMENTS: ExploreCategory = {
       description: 'Driving licence services for bikes and cars.',
       iconKey: 'twoFourWheelLicense',
       priceLabel: '₹799',
-      ctaLabel: 'Apply now',
+      ctaLabel: 'Buy now',
     },
     {
       id: 'identity-senior',
@@ -154,7 +154,7 @@ export const IDENTITY_DOCUMENTS: ExploreCategory = {
       description: 'Official senior citizen certificate application help.',
       iconKey: 'seniorCitizenCertificate',
       priceLabel: '₹449',
-      ctaLabel: 'Apply now',
+      ctaLabel: 'Buy now',
     },
   ],
 };
@@ -170,7 +170,7 @@ export const CERTIFICATES: ExploreCategory = {
       description: 'Apply for a new or duplicate birth certificate.',
       iconKey: 'birthCertificate',
       priceLabel: '₹399',
-      ctaLabel: 'Apply now',
+      ctaLabel: 'Buy now',
     },
     {
       id: 'cert-death',
@@ -178,7 +178,7 @@ export const CERTIFICATES: ExploreCategory = {
       description: 'Get a death certificate issued without hassle.',
       iconKey: 'deathCertificate',
       priceLabel: '₹399',
-      ctaLabel: 'Apply now',
+        ctaLabel: 'Buy now',
     },
     {
       id: 'cert-marriage',
@@ -186,7 +186,7 @@ export const CERTIFICATES: ExploreCategory = {
       description: 'Register your marriage and obtain the certificate.',
       iconKey: 'marriageCertificate',
       priceLabel: '₹699',
-      ctaLabel: 'Apply now',
+      ctaLabel: 'Buy now',
     },
     {
       id: 'cert-domicile',
@@ -194,7 +194,7 @@ export const CERTIFICATES: ExploreCategory = {
       description: 'Proof of residence for government applications.',
       iconKey: 'domicileCertificate',
       priceLabel: '₹499',
-      ctaLabel: 'Apply now',
+      ctaLabel: 'Buy now',
     },
     {
       id: 'cert-caste',
@@ -202,7 +202,7 @@ export const CERTIFICATES: ExploreCategory = {
       description: 'State-issued caste certificate application support.',
       iconKey: 'casteCertificate',
       priceLabel: '₹449',
-      ctaLabel: 'Apply now',
+      ctaLabel: 'Buy now',
     },
     {
       id: 'cert-income',
@@ -210,7 +210,7 @@ export const CERTIFICATES: ExploreCategory = {
       description: 'Official income proof for schemes and loans.',
       iconKey: 'incomeCertificate',
       priceLabel: '₹399',
-      ctaLabel: 'Apply now',
+      ctaLabel: 'Buy now',
     },
   ],
 };
@@ -222,7 +222,7 @@ export const LIMITED_OFFER_SERVICES: ExploreServiceItem[] = [
     description: 'Limited-time expert ITR filing at a special price.',
     iconKey: 'itrFiling',
     priceLabel: '₹499',
-    ctaLabel: 'Apply now',
+    ctaLabel: 'Buy now',
   },
   {
     id: 'limited-driving',
@@ -230,7 +230,7 @@ export const LIMITED_OFFER_SERVICES: ExploreServiceItem[] = [
     description: 'Fast-track learner and permanent licence assistance.',
     iconKey: 'drivingLicence',
     priceLabel: '₹799',
-    ctaLabel: 'Apply now',
+    ctaLabel: 'Buy now',
   },
   {
     id: 'limited-rent',
@@ -238,7 +238,7 @@ export const LIMITED_OFFER_SERVICES: ExploreServiceItem[] = [
     description: 'Create a legally valid rent agreement online.',
     iconKey: 'rentAgreement',
     priceLabel: '₹599',
-    ctaLabel: 'Apply now',
+    ctaLabel: 'Buy now',
   },
 ];
 

@@ -34,17 +34,17 @@ export function resolveBannerImageUri(imageUrl: string): string {
   const nodeOrigin = getNodeApiOrigin().replace(/\/+$/, '');
 
   if (/^https?:\/\//i.test(imageUrl)) {
-    if (__DEV__) {
-      try {
-        const parsed = new URL(imageUrl);
-        const isLocalHost =
-          parsed.hostname === 'localhost' || parsed.hostname === '127.0.0.1';
-        if (isLocalHost && parsed.pathname.includes('/uploads/')) {
-          return `${nodeOrigin}${parsed.pathname}${parsed.search}`;
-        }
-      } catch {
-        // keep original URL
+    try {
+      const parsed = new URL(imageUrl);
+      const isLocalHost =
+        parsed.hostname === 'localhost' || parsed.hostname === '127.0.0.1';
+      const nodeIsRemote =
+        !nodeOrigin.includes('localhost') && !nodeOrigin.includes('127.0.0.1');
+      if (isLocalHost && parsed.pathname.includes('/uploads/') && nodeIsRemote) {
+        return `${nodeOrigin}${parsed.pathname}${parsed.search}`;
       }
+    } catch {
+      // keep original URL
     }
     return imageUrl;
   }

@@ -14,6 +14,8 @@ import Svg, { Circle, Path, Rect } from 'react-native-svg';
 
 import AppScreenHeader from '../../../components/AppScreenHeader';
 import TopPicksCarousel from '../components/TopPicksCarousel';
+import ServiceAddressPickerModal from '../components/ServiceAddressPickerModal';
+import ServiceDeliveryAddressBar from '../components/ServiceDeliveryAddressBar';
 import { inter18 } from '../../../core/theme/typography';
 import {
   fetchBuyNowCheckoutPreview,
@@ -24,6 +26,8 @@ import {
   removeServiceCartItem,
 } from '../api/serviceCartApi';
 import { useServiceCart } from '../hooks/useServiceCart';
+import { useServiceAddresses } from '../hooks/useServiceAddresses';
+import { useUserProfile } from '../hooks/useUserProfile';
 import { CheckoutPreviewData, ServiceCartLineItem } from '../types/cart.types';
 
 type Props = {
@@ -108,19 +112,6 @@ function CoinIcon() {
   );
 }
 
-function HomeIcon() {
-  return (
-    <Svg width={20} height={20} viewBox="0 0 24 24">
-      <Path
-        d="M3 10.5L12 3l9 7.5V20a1 1 0 0 1-1 1h-5v-7H9v7H4a1 1 0 0 1-1-1v-9.5z"
-        stroke="#2563EB"
-        strokeWidth="1.8"
-        fill="none"
-      />
-    </Svg>
-  );
-}
-
 function CheckGreenIcon() {
   return (
     <Svg width={16} height={16} viewBox="0 0 22 22">
@@ -152,11 +143,6 @@ function ArrowRightIcon() {
 }
 
 // ─── Static placeholders (wire to API / profile later) ───────────────────────
-
-const STATIC_ADDRESS = {
-  name: 'Samiksha Shetty',
-  line: 'Flat 402, Green Valley Apartments, Andheri West, Mumbai - 400053',
-};
 
 const STATIC_COUPON = {
   code: 'FIRSTBUY20',
@@ -310,6 +296,18 @@ export default function ServiceCartScreen({
   onProceedToCheckout,
 }: Props) {
   const { items, total: apiTotal, loading, error, userId, reload } = useServiceCart();
+  const { profile } = useUserProfile();
+  const {
+    addresses,
+    selectedAddress,
+    loading: addressesLoading,
+    saving: addressSaving,
+    selectAddress,
+    saveAddress,
+    removeAddress,
+  } = useServiceAddresses();
+  const [addressPickerVisible, setAddressPickerVisible] = useState(false);
+  const [addressPickerAddMode, setAddressPickerAddMode] = useState(false);
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [useRewardCoins, setUseRewardCoins] = useState(true);
   const [removingCartItemId, setRemovingCartItemId] = useState<number | null>(null);
@@ -363,6 +361,12 @@ export default function ServiceCartScreen({
 
   const handleProceedToBuy = async () => {
     if (selectedItems.length === 0) {
+      return;
+    }
+    if (!selectedAddress) {
+      setAddressPickerAddMode(true);
+      setAddressPickerVisible(true);
+      Alert.alert('Delivery address', 'Please add a delivery address to continue.');
       return;
     }
     if (userId == null) {
@@ -621,20 +625,14 @@ export default function ServiceCartScreen({
       {/* Sticky footer */}
       {items.length > 0 ? (
       <View style={styles.footer}>
-        <View style={styles.addressRow}>
-          <HomeIcon />
-          <View style={styles.addressText}>
-            <Text style={[styles.addressName, inter18('bold')]}>
-              Delivering to {STATIC_ADDRESS.name}
-            </Text>
-            <Text style={[styles.addressLine, inter18('regular')]} numberOfLines={2}>
-              {STATIC_ADDRESS.line}
-            </Text>
-          </View>
-          <Pressable>
-            <Text style={[styles.changeLink, inter18('bold')]}>Change</Text>
-          </Pressable>
-        </View>
+        <ServiceDeliveryAddressBar
+          address={selectedAddress}
+          loading={addressesLoading}
+          onChangePress={() => {
+            setAddressPickerAddMode(!selectedAddress);
+            setAddressPickerVisible(true);
+          }}
+        />
 
         <View style={styles.freeDeliveryBar}>
           <CheckGreenIcon />
@@ -667,6 +665,25 @@ export default function ServiceCartScreen({
         </View>
       </View>
       ) : null}
+
+      <ServiceAddressPickerModal
+        visible={addressPickerVisible}
+        addresses={addresses}
+        selectedAddressId={selectedAddress?.id ?? null}
+        loading={addressesLoading}
+        saving={addressSaving}
+        profileName={profile?.name}
+        profilePhone={profile?.contactNumber}
+        startInAddMode={addressPickerAddMode}
+        onClose={() => setAddressPickerVisible(false)}
+        onSelectAddress={addressId => {
+          void selectAddress(addressId);
+        }}
+        onSaveAddress={async (input, addressId) => {
+          await saveAddress(input, addressId);
+        }}
+        onDeleteAddress={removeAddress}
+      />
     </SafeAreaView>
   );
 }

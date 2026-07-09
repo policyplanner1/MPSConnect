@@ -1,6 +1,7 @@
 import React, { useCallback, useMemo, useState } from 'react';
 import {
   ActivityIndicator,
+  Alert,
   Image,
   Modal,
   Pressable,
@@ -22,7 +23,12 @@ import {
   mapApiCartItemToLineItem,
 } from '../api/serviceCartApi';
 import TopPicksCarousel from '../components/TopPicksCarousel';
+import ServiceAddressPickerModal from '../components/ServiceAddressPickerModal';
+import ServiceDeliveryAddressBar from '../components/ServiceDeliveryAddressBar';
 import { useCheckoutPayment } from '../hooks/useCheckoutPayment';
+import { useServiceAddresses } from '../hooks/useServiceAddresses';
+import { useUserProfile } from '../hooks/useUserProfile';
+import { getCheckoutAddressId } from '../utils/serviceAddress';
 import { mapRelatedToTopPicks, useRelatedServices } from '../hooks/useRelatedServices';
 import { CartApiIndividualItem, CheckoutPreviewData, CheckoutSummary } from '../types/cart.types';
 import { ServiceDocument } from '../types/service.types';
@@ -60,19 +66,6 @@ function CoinIcon() {
     <View style={styles.coinIconWrap}>
       <Text style={styles.coinIconStar}>★</Text>
     </View>
-  );
-}
-
-function HomeIcon() {
-  return (
-    <Svg width={20} height={20} viewBox="0 0 24 24">
-      <Path
-        d="M3 10.5L12 3l9 7.5V20a1 1 0 0 1-1 1h-5v-7H9v7H4a1 1 0 0 1-1-1v-9.5z"
-        stroke="#2563EB"
-        strokeWidth="1.8"
-        fill="none"
-      />
-    </Svg>
   );
 }
 
@@ -146,11 +139,6 @@ function ChevronDownIcon({ flipped }: { flipped?: boolean }) {
 }
 
 // ─── Static UI (wire to API later) ─────────────────────────────────────────────
-
-const STATIC_ADDRESS = {
-  name: 'Samiksha Shetty',
-  line: '6-60, GF CT MALL, Pant Nagar, Worli, Mumbai - 400018',
-};
 
 const STATIC_COUPON = {
   code: 'REWARD20',
@@ -472,6 +460,18 @@ export default function ServiceCheckoutScreen({
 }: Props) {
   const [useRewardCoins, setUseRewardCoins] = useState(preview.summary.reward_discount > 0);
   const { payAndProceed, paying, statusLabel } = useCheckoutPayment();
+  const { profile } = useUserProfile();
+  const {
+    addresses,
+    selectedAddress,
+    loading: addressesLoading,
+    saving: addressSaving,
+    selectAddress,
+    saveAddress,
+    removeAddress,
+  } = useServiceAddresses();
+  const [addressPickerVisible, setAddressPickerVisible] = useState(false);
+  const [addressPickerAddMode, setAddressPickerAddMode] = useState(false);
 
   const checkoutItems = useMemo(() => getCheckoutPreviewItems(preview), [preview]);
   const documents = useMemo(() => collectCheckoutDocuments(checkoutItems), [checkoutItems]);
@@ -485,10 +485,18 @@ export default function ServiceCheckoutScreen({
       return;
     }
 
+    if (!selectedAddress) {
+      setAddressPickerAddMode(true);
+      setAddressPickerVisible(true);
+      Alert.alert('Delivery address', 'Please add a delivery address to continue.');
+      return;
+    }
+
     const payment = await payAndProceed({
       preview,
       itemCount,
       orderLabel: isBuyNow ? 'Buy now' : 'Service order',
+      addressId: getCheckoutAddressId(selectedAddress),
     });
 
     if (!payment) {
@@ -513,6 +521,7 @@ export default function ServiceCheckoutScreen({
     onProceedToUpload,
     payAndProceed,
     preview,
+    selectedAddress,
   ]);
 
   return (
@@ -597,20 +606,14 @@ export default function ServiceCheckoutScreen({
 
       {/* Sticky footer */}
       <View style={styles.footer}>
-        <View style={styles.addressRow}>
-          <HomeIcon />
-          <View style={styles.addressText}>
-            <Text style={[styles.addressName, inter18('bold')]}>
-              Delivering to {STATIC_ADDRESS.name}
-            </Text>
-            <Text style={[styles.addressLine, inter18('regular')]} numberOfLines={2}>
-              {STATIC_ADDRESS.line}
-            </Text>
-          </View>
-          <Pressable>
-            <Text style={[styles.changeLink, inter18('bold')]}>Change</Text>
-          </Pressable>
-        </View>
+        <ServiceDeliveryAddressBar
+          address={selectedAddress}
+          loading={addressesLoading}
+          onChangePress={() => {
+            setAddressPickerAddMode(!selectedAddress);
+            setAddressPickerVisible(true);
+          }}
+        />
 
         <View style={styles.freeDeliveryBar}>
           <CheckGreenIcon />
@@ -651,6 +654,25 @@ export default function ServiceCheckoutScreen({
           </View>
         </View>
       </Modal>
+
+      <ServiceAddressPickerModal
+        visible={addressPickerVisible}
+        addresses={addresses}
+        selectedAddressId={selectedAddress?.id ?? null}
+        loading={addressesLoading}
+        saving={addressSaving}
+        profileName={profile?.name}
+        profilePhone={profile?.contactNumber}
+        startInAddMode={addressPickerAddMode}
+        onClose={() => setAddressPickerVisible(false)}
+        onSelectAddress={addressId => {
+          void selectAddress(addressId);
+        }}
+        onSaveAddress={async (input, addressId) => {
+          await saveAddress(input, addressId);
+        }}
+        onDeleteAddress={removeAddress}
+      />
     </SafeAreaView>
   );
 }

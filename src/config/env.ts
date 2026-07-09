@@ -15,10 +15,16 @@ import {
 import { Platform } from 'react-native';
 
 /**
- * Fallback when `.env` is missing or `API_BASE_URL` is empty.
- * For a physical device, set `API_BASE_URL` in `.env` to your PC LAN IP.
+ * Deployed Node API base (auth, addresses, DocVault, banners).
+ * Set `AUTH_API_BASE_URL` in `.env` — e.g. https://mpsconnect.thempstech.com/api/v1
  */
-const DEV_MACHINE_HOST = '192.168.1.237';
+export const DEPLOYED_NODE_API_URL = 'https://mpsconnect.thempstech.com/api/v1';
+
+/**
+ * Fallback when `.env` is missing or `API_BASE_URL` is empty.
+ * For local dev, set `AUTH_API_BASE_URL` in `.env` to your PC LAN IP or use DEPLOYED_NODE_API_URL.
+ */
+const DEV_MACHINE_HOST = '192.168.1.169';
 const API_PORT = 5000;
 
 function buildFallbackApiBaseUrl(): string {

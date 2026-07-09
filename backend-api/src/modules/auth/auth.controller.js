@@ -1,6 +1,7 @@
 const prisma = require("../../config/prisma");
 
 const bcrypt = require("bcryptjs");
+const { randomUUID } = require("crypto");
 
 const jwt = require("jsonwebtoken");
 const {
@@ -79,10 +80,12 @@ const signup = async (req, res) => {
 
     const user = await prisma.user.create({
       data: {
+        id: randomUUID(),
         name: name.trim(),
         email: normalizedEmail,
         contactNumber: normalizedContact,
         password: hashedPassword,
+        updatedAt: new Date(),
       },
     });
 
@@ -157,8 +160,8 @@ const login = async (req, res) => {
     const validatedData =
       loginSchema.parse(req.body);
 
-    const { email, password } =
-      validatedData;
+    const { email, password } = validatedData;
+    const normalizedEmail = email.trim().toLowerCase();
 
     /*
     |--------------------------------------------------------------------------
@@ -168,7 +171,7 @@ const login = async (req, res) => {
 
     const user = await prisma.user.findUnique({
       where: {
-        email,
+        email: normalizedEmail,
       },
     });
 
@@ -198,6 +201,14 @@ const login = async (req, res) => {
       });
     }
 
+    const jwtSecret = getJwtSecret();
+    if (!jwtSecret) {
+      return res.status(500).json({
+        success: false,
+        message: "Server misconfigured: JWT_SECRET missing",
+      });
+    }
+
     /*
     |--------------------------------------------------------------------------
     | Generate JWT Token
@@ -211,7 +222,7 @@ const login = async (req, res) => {
         role: user.role,
       },
 
-      getJwtSecret(),
+      jwtSecret,
 
       {
         expiresIn: "7d",

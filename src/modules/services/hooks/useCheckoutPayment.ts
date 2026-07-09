@@ -1,7 +1,6 @@
 import { useCallback, useState } from 'react';
 import { Alert } from 'react-native';
 
-import { DEFAULT_SERVICE_ADDRESS_ID } from '../../../config/env';
 import { getCrmEnquiryUserId } from '../../../core/utils/crmUserSession';
 import {
   getServicePaymentErrorMessage,
@@ -21,7 +20,7 @@ export function useCheckoutPayment() {
       preview: CheckoutPreviewData;
       itemCount: number;
       orderLabel: string;
-      addressId?: number;
+      addressId: number;
     }): Promise<CheckoutPaymentSuccess | null> => {
       const userId = await getCrmEnquiryUserId();
       if (userId == null) {
@@ -46,7 +45,7 @@ export function useCheckoutPayment() {
 
         const result = await runCheckoutPaymentFlow({
           userId,
-          addressId: params.addressId ?? DEFAULT_SERVICE_ADDRESS_ID,
+          addressId: params.addressId,
           itemCount: params.itemCount,
           isBuyNow,
           buyNowServiceId: target?.service_id,

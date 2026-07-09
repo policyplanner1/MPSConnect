@@ -82,6 +82,28 @@ model user {
   crmUserId        Int?
   orderNotifyState String?    @db.LongText
   document         document[]
+  addresses        UserAddress[]
+}
+
+model UserAddress {
+  id           Int      @id @default(autoincrement())
+  userId       String
+  label        String   @default("Home")
+  fullName     String
+  phone        String
+  addressLine1 String
+  addressLine2 String?
+  city         String
+  state        String
+  pincode      String
+  isDefault    Boolean  @default(false)
+  crmAddressId Int?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+  user         user     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@map("useraddress")
 }
 
 model SupportChatHistory {
